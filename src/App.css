@@ -1,5 +1,9 @@
 .App {
   background-color: #282c34;
+
+}
+canvas {
+  border: 1px solid cadetblue;
 }
 
 .App-logo {
@@ -28,11 +32,3 @@
   color: #61dafb;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
