@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import "./App.css";
 import {
   b2Body,
@@ -67,7 +67,12 @@ function App() {
 
   // DEBUG BOXES:
   const shape = new b2PolygonShape();
-  shape.SetAsBox(10 / ZOOM, 10 / ZOOM);
+  // shape.SetAsBox(10 / ZOOM, 10 / ZOOM);
+  shape.Set([
+    { x: 0, y: 0 },
+    { x: 40 / ZOOM, y: 0 },
+    { x: 0, y: 40 / ZOOM },
+  ]);
 
   const fd: b2FixtureDef = {
     shape,
