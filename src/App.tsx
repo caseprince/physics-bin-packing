@@ -31,8 +31,82 @@ PADDING /= ZOOM;
 const WIDTH = 1000;
 const HEIGHT = 1000;
 
+const DEBUG_SVG = `<svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
+<g class="face" fill="none" stroke="blue" stroke-width="0.1">
+<path d="M 60.9764 28.8474 L 4.614 52.379"/>
+<path d="M 4.614 52.379 A 3.3308 3.3308 146.3304 0 1 0.0 49.3054"/>
+<path d="M 0.0 49.3054 L 0.0 5.0"/>
+<path d="M 0.0 5.0 A 3.3526 3.3526 146.1576 0 1 4.6255 1.8985"/>
+<path d="M 4.6255 1.8985 L 60.9648 25.0225"/>
+<path d="M 60.9648 25.0225 A 2.0698 2.0698 157.512 0 1 60.9764 28.8474"/>
+<rect x="-2.45" y="3.9288" width="4.7" height="4.2" transform="translate(33.4685,41.4469) rotate(157.3392)" />
+<g transform="translate(33.4685,41.4469) rotate(157.3392)">
+    <text transform="translate(0,6.0288) rotate(-90)" x="0" y="-5" font-family="Times New Roman" font-size="3" stroke="black" dominant-baseline="middle" text-anchor="middle">1</text>
+</g>
+</g>
+<g class="face" fill="none" stroke="blue" stroke-width="0.1">
+<path d="M 41.1969 11.0853 L 2.0854 96.3152"/>
+<path d="M 2.0854 96.3152 A 1.0925 1.0925 167.675 0 1 -1.2e-14 95.8596"/>
+<path d="M -1.2e-14 95.8596 L -1.9e-15 61.2937"/>
+<path d="M -1.9e-15 61.2937 A 13.3655 13.3655 110.5107 0 1 3.2817 52.5214"/>
+<path d="M 3.2817 52.5214 L 40.0005 10.3132"/>
+<path d="M 40.0005 10.3132 A 0.7192 0.7192 171.8143 0 1 41.1969 11.0853"/>
+<rect x="-2.45" y="4.1043" width="4.7" height="4.2" transform="translate(23.8044,51.8735) rotate(114.6501)" />
+<g transform="translate(23.8044,51.8735) rotate(114.6501)">
+    <text transform="translate(0,6.2043) rotate(-90)" x="0" y="-5" font-family="Times New Roman" font-size="3" stroke="black" dominant-baseline="middle" text-anchor="middle">2</text>
+</g>
+<rect x="-2.45" y="3.9288" width="4.7" height="4.2" transform="translate(23.8044,27.3631) rotate(311.0215)" />
+<g transform="translate(23.8044,27.3631) rotate(311.0215)">
+    <text transform="translate(0,6.0288) rotate(90)" x="0" y="-5" font-family="Times New Roman" font-size="3" stroke="black" dominant-baseline="middle" text-anchor="middle">1</text>
+</g>
+</g>
+<g class="face" fill="none" stroke="blue" stroke-width="0.1">
+<path d="M 58.2708 93.7015 L 4.9951 91.3309"/>
+<path d="M 4.9951 91.3309 A 5.2274 5.2274 133.7261 0 1 -6.7e-15 86.1086"/>
+<path d="M -6.7e-15 86.1086 L -5.6e-16 7.1222"/>
+<path d="M -5.6e-16 7.1222 A 1.556 1.556 162.7135 0 1 2.8373 6.2393"/>
+<path d="M 2.8373 6.2393 L 60.4286 89.8067"/>
+<path d="M 60.4286 89.8067 A 2.4863 2.4863 153.5604 0 1 58.2708 93.7015"/>
+<rect x="-2.45" y="4.1043" width="4.7" height="4.2" transform="translate(32.3874,46.9954) rotate(55.4269)" />
+<g transform="translate(32.3874,46.9954) rotate(55.4269)">
+    <text transform="translate(0,6.2043) rotate(90)" x="0" y="-5" font-family="Times New Roman" font-size="3" stroke="black" dominant-baseline="middle" text-anchor="middle">2</text>
+</g>
+</g>
+</svg>`;
+
+const parser = new DOMParser();
+const doc = parser.parseFromString(DEBUG_SVG, "application/xml");
+// print the name of the root element or error message
+const errorNode = doc.querySelector("parsererror");
+if (errorNode) {
+  console.log("error while parsing");
+} else {
+  console.log(doc.documentElement);
+}
+
+const facesGroups = doc.documentElement.querySelectorAll("svg > g.face");
+const faceLinePoints = Array.from(facesGroups).map((faceGroup) => {
+  const paths = faceGroup.querySelectorAll("path");
+  const lines = Array.from(paths).filter((path) =>
+    path.getAttribute("d")?.includes(" L ")
+  );
+  const points: Array<{ x: number; y: number }> = [];
+  lines.forEach((line) => {
+    const dParts = line.getAttribute("d")?.split(" ");
+    if (dParts?.length) {
+      points.push({ x: +dParts[1], y: +dParts[2] }); // "M"
+      points.push({ x: +dParts[4], y: +dParts[5] }); // "L"
+    }
+  });
+  return points;
+});
+console.log(faceLinePoints);
+
 function App() {
   const debugCanvasRef = useRef<HTMLCanvasElement>(null);
+  const m_debugDraw = useRef<DebugDraw>();
+  const stats = new Stats();
+  stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
 
   const gravity: XY = { x: 0, y: 100 };
   const m_world: b2World = b2World.Create(gravity);
@@ -65,40 +139,27 @@ function App() {
     ground.CreateFixture({ shape });
   }
 
-  // DEBUG BOXES:
-  const shape = new b2PolygonShape();
-  // shape.SetAsBox(10 / ZOOM, 10 / ZOOM);
-  shape.Set([
-    { x: 0, y: 0 },
-    { x: 40 / ZOOM, y: 0 },
-    { x: 0, y: 40 / ZOOM },
-  ]);
+  for (let x = 1; x < 120; x += faceLinePoints.length) {
+    faceLinePoints.forEach((facePoints, i) => {
+      const shape = new b2PolygonShape();
+      // shape.SetAsBox(10 / ZOOM, 10 / ZOOM);
+      shape.Set(
+        facePoints.map((point) => ({ x: point.x / ZOOM, y: point.y / ZOOM }))
+      );
 
-  const fd: b2FixtureDef = {
-    shape,
-    density: 1,
-    friction: 0.1,
-  };
-
-  const m_bodies = new Array<b2Body>(8);
-  const m_indices = b2MakeNumberArray(8);
-
-  for (let i = 0; i < 30; ++i) {
-    m_indices[i] = i;
-    const body = m_world.CreateBody({
-      type: b2BodyType.b2_dynamicBody,
-      position: { x: WIDTH / 2, y: (HEIGHT / 2 - 25 * i) / ZOOM },
-      userData: m_indices[i],
+      const fd: b2FixtureDef = {
+        shape,
+        density: 1,
+        friction: 0.1,
+      };
+      const body = m_world.CreateBody({
+        type: b2BodyType.b2_dynamicBody,
+        position: { x: WIDTH / 2, y: (HEIGHT / 2 - 105 * (i + x)) / ZOOM },
+        // userData: m_indices[i],
+      });
+      body.CreateFixture(fd);
     });
-
-    m_bodies[i] = body;
-
-    body.CreateFixture(fd);
   }
-
-  const m_debugDraw = useRef<DebugDraw>();
-  const stats = new Stats();
-  stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
 
   // LOOP
   const loop = () => {
@@ -116,7 +177,7 @@ function App() {
 
     m_world.Step(1 / 60, {
       velocityIterations: 8,
-      positionIterations: 3,
+      positionIterations: 9,
     });
     const draw = m_debugDraw.current;
     if (draw) {
