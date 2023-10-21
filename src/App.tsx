@@ -1,8 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./App.css";
 import {
   b2Body,
   b2BodyType,
+  b2CircleShape,
   b2EdgeShape,
   b2Fixture,
   b2FixtureDef,
@@ -33,22 +34,10 @@ const HEIGHT = 1000;
 
 const DEBUG_SVG = `<svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
 <g class="face" fill="none" stroke="blue" stroke-width="0.1">
-<path d="M 60.9764 28.8474 L 4.614 52.379"/>
-<path d="M 4.614 52.379 A 3.3308 3.3308 146.3304 0 1 0.0 49.3054"/>
-<path d="M 0.0 49.3054 L 0.0 5.0"/>
-<path d="M 0.0 5.0 A 3.3526 3.3526 146.1576 0 1 4.6255 1.8985"/>
-<path d="M 4.6255 1.8985 L 60.9648 25.0225"/>
-<path d="M 60.9648 25.0225 A 2.0698 2.0698 157.512 0 1 60.9764 28.8474"/>
-<rect x="-2.45" y="3.9288" width="4.7" height="4.2" transform="translate(33.4685,41.4469) rotate(157.3392)" />
-<g transform="translate(33.4685,41.4469) rotate(157.3392)">
-    <text transform="translate(0,6.0288) rotate(-90)" x="0" y="-5" font-family="Times New Roman" font-size="3" stroke="black" dominant-baseline="middle" text-anchor="middle">1</text>
-</g>
-</g>
-<g class="face" fill="none" stroke="blue" stroke-width="0.1">
 <path d="M 41.1969 11.0853 L 2.0854 96.3152"/>
-<path d="M 2.0854 96.3152 A 1.0925 1.0925 167.675 0 1 -1.2e-14 95.8596"/>
-<path d="M -1.2e-14 95.8596 L -1.9e-15 61.2937"/>
-<path d="M -1.9e-15 61.2937 A 13.3655 13.3655 110.5107 0 1 3.2817 52.5214"/>
+<path d="M 2.0854 96.3152 A 1.0925 1.0925 167.675 0 1 1.2e-14 95.8596"/>
+<path d="M 1.2e-14 95.8596 L 1.9e-15 61.2937"/>
+<path d="M 1.9e-15 61.2937 A 13.3655 13.3655 110.5107 0 1 3.2817 52.5214"/>
 <path d="M 3.2817 52.5214 L 40.0005 10.3132"/>
 <path d="M 40.0005 10.3132 A 0.7192 0.7192 171.8143 0 1 41.1969 11.0853"/>
 <rect x="-2.45" y="4.1043" width="4.7" height="4.2" transform="translate(23.8044,51.8735) rotate(114.6501)" />
@@ -61,15 +50,35 @@ const DEBUG_SVG = `<svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/sv
 </g>
 </g>
 <g class="face" fill="none" stroke="blue" stroke-width="0.1">
-<path d="M 58.2708 93.7015 L 4.9951 91.3309"/>
-<path d="M 4.9951 91.3309 A 5.2274 5.2274 133.7261 0 1 -6.7e-15 86.1086"/>
-<path d="M -6.7e-15 86.1086 L -5.6e-16 7.1222"/>
-<path d="M -5.6e-16 7.1222 A 1.556 1.556 162.7135 0 1 2.8373 6.2393"/>
-<path d="M 2.8373 6.2393 L 60.4286 89.8067"/>
-<path d="M 60.4286 89.8067 A 2.4863 2.4863 153.5604 0 1 58.2708 93.7015"/>
-<rect x="-2.45" y="4.1043" width="4.7" height="4.2" transform="translate(32.3874,46.9954) rotate(55.4269)" />
-<g transform="translate(32.3874,46.9954) rotate(55.4269)">
-    <text transform="translate(0,6.2043) rotate(90)" x="0" y="-5" font-family="Times New Roman" font-size="3" stroke="black" dominant-baseline="middle" text-anchor="middle">2</text>
+<path d="M 45.6979 4.421 L 4.184 67.685"/>
+<path d="M 4.184 67.685 A 1.494 1.494 163.3635 0 1 1.4408 66.8654"/>
+<path d="M 1.4408 66.8654 L 1.4408 12.5686"/>
+<path d="M 1.4408 12.5686 A 5.84 5.84 130.5691 0 1 6.3812 6.7983"/>
+<path d="M 6.3812 6.7983 L 43.5007 1.0109"/>
+<path d="M 43.5007 1.0109 A 2.2191 2.2191 156.0673 0 1 45.6979 4.421"/>
+<rect x="-2.45" y="4.0586" width="4.7" height="4.2" transform="translate(24.9924,38.0865) rotate(123.2729)" />
+<g transform="translate(24.9924,38.0865) rotate(123.2729)">
+    <text transform="translate(0,6.1586) rotate(90)" x="0" y="-5" font-family="Times New Roman" font-size="3" stroke="black" dominant-baseline="middle" text-anchor="middle">3</text>
+</g>
+<rect x="-2.45" y="4.3408" width="4.7" height="4.2" transform="translate(7.1e-15,41.9831) rotate(270.0)" />
+<g transform="translate(7.1e-15,41.9831) rotate(270.0)">
+    <text transform="translate(0,6.4408) rotate(-90)" x="0" y="-5" font-family="Times New Roman" font-size="3" stroke="black" dominant-baseline="middle" text-anchor="middle">4</text>
+</g>
+</g>
+<g class="face" fill="none" stroke="blue" stroke-width="0.1">
+<path d="M 59.4935 29.4665 L 4.614 52.379"/>
+<path d="M 4.614 52.379 A 3.3308 3.3308 146.3304 0 1 0.0 49.3054"/>
+<path d="M 0.0 49.3054 L 0.0 6.2277"/>
+<path d="M 0.0 6.2277 A 3.3526 3.3526 146.1576 0 1 4.6255 3.1263"/>
+<path d="M 4.6255 3.1263 L 59.482 25.6416"/>
+<path d="M 59.482 25.6416 A 2.0698 2.0698 157.512 0 1 59.4935 29.4665"/>
+<rect x="-2.45" y="3.9288" width="4.7" height="4.2" transform="translate(33.4685,41.4469) rotate(157.3392)" />
+<g transform="translate(33.4685,41.4469) rotate(157.3392)">
+    <text transform="translate(0,6.0288) rotate(-90)" x="0" y="-5" font-family="Times New Roman" font-size="3" stroke="black" dominant-baseline="middle" text-anchor="middle">1</text>
+</g>
+<rect x="-2.45" y="4.0358" width="4.7" height="4.2" transform="translate(33.4685,13.7368) rotate(22.3153)" />
+<g transform="translate(33.4685,13.7368) rotate(22.3153)">
+    <text transform="translate(0,6.1358) rotate(90)" x="0" y="-5" font-family="Times New Roman" font-size="3" stroke="black" dominant-baseline="middle" text-anchor="middle">5</text>
 </g>
 </g>
 </svg>`;
@@ -84,27 +93,61 @@ if (errorNode) {
   console.log(doc.documentElement);
 }
 
-const facesGroups = doc.documentElement.querySelectorAll("svg > g.face");
-const faceLinePoints = Array.from(facesGroups).map((faceGroup) => {
+const faceGroups = doc.documentElement.querySelectorAll("svg > g.face");
+const faceGeoms = Array.from(faceGroups).map((faceGroup) => {
   const paths = faceGroup.querySelectorAll("path");
   const lines = Array.from(paths).filter((path) =>
     path.getAttribute("d")?.includes(" L ")
   );
-  const points: Array<{ x: number; y: number }> = [];
-  lines.forEach((line) => {
-    const dParts = line.getAttribute("d")?.split(" ");
-    if (dParts?.length) {
-      points.push({ x: +dParts[1], y: +dParts[2] }); // "M"
-      points.push({ x: +dParts[4], y: +dParts[5] }); // "L"
+  const polygonPoints: Array<{ x: number; y: number }> = [];
+  lines.forEach((line, i) => {
+    const dParts = line.getAttribute("d")?.split(" ") || [];
+    // Square off rounded corners (inaccurately!)
+    // if (dParts?.length) {
+    //   polygonPoints.push({ x: +dParts[1], y: +dParts[2] }); // "M"
+    //   polygonPoints.push({ x: +dParts[4], y: +dParts[5] }); // "L"
+    // }
+
+    const nextLineIndex = (i + 1) % lines.length;
+    const nextLine = lines[nextLineIndex];
+    const dParts2 = nextLine.getAttribute("d")?.split(" ") || [];
+    const intersection = intersect(
+      +dParts[1],
+      +dParts[2],
+      +dParts[4],
+      +dParts[5],
+      +dParts2[1],
+      +dParts2[2],
+      +dParts2[4],
+      +dParts2[5]
+    );
+    if (intersection) {
+      polygonPoints.push(intersection);
+    } else {
+      console.error("Parallel lines!?");
     }
   });
-  return points;
+
+  // # (rx ry angle large-arc-flag sweep-flag x y)
+  // Rounded corner circles can be too big for skinny triangles, and also kill FPS
+  // const circles = Array.from(paths)
+  //   .filter((path) => path.getAttribute("d")?.includes(" A "))
+  //   .map((path) => {
+  //     const dParts = path.getAttribute("d")?.split(" ");
+  //     return { radius: (dParts && +dParts[4]) as number };
+  //   });
+
+  return { polygonPoints };
 });
-console.log(faceLinePoints);
+
+console.log(faceGeoms);
 
 function App() {
   const debugCanvasRef = useRef<HTMLCanvasElement>(null);
   const m_debugDraw = useRef<DebugDraw>();
+  const [faceTransforms, setFaceTransforms] = useState<
+    { x: Number; y: Number; rotation: number }[]
+  >([]);
   const stats = new Stats();
   stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
 
@@ -139,18 +182,22 @@ function App() {
     ground.CreateFixture({ shape });
   }
 
-  for (let x = 1; x < 120; x += faceLinePoints.length) {
-    faceLinePoints.forEach((facePoints, i) => {
+  const DEBUG_FACE_COUNT = 3;
+  const bodies: b2Body[] = [];
+  for (let x = 1; x < DEBUG_FACE_COUNT; x += faceGeoms.length) {
+    faceGeoms.forEach((faceGeom, i) => {
       const shape = new b2PolygonShape();
       // shape.SetAsBox(10 / ZOOM, 10 / ZOOM);
       shape.Set(
-        facePoints.map((point) => ({ x: point.x / ZOOM, y: point.y / ZOOM }))
+        faceGeom.polygonPoints.map((point) => ({
+          x: point.x / ZOOM,
+          y: point.y / ZOOM,
+        }))
       );
-
       const fd: b2FixtureDef = {
         shape,
         density: 1,
-        friction: 0.1,
+        friction: 0.01,
       };
       const body = m_world.CreateBody({
         type: b2BodyType.b2_dynamicBody,
@@ -158,6 +205,7 @@ function App() {
         // userData: m_indices[i],
       });
       body.CreateFixture(fd);
+      bodies.push(body);
     });
   }
 
@@ -176,13 +224,28 @@ function App() {
     m_world.SetSubStepping(false);
 
     m_world.Step(1 / 60, {
-      velocityIterations: 8,
-      positionIterations: 9,
+      velocityIterations: 18,
+      positionIterations: 19,
     });
     const draw = m_debugDraw.current;
     if (draw) {
       DrawShapes(draw, m_world);
       DrawJoints(draw, m_world);
+    }
+
+    if (bodies.some((body) => body.IsAwake())) {
+      setFaceTransforms(
+        bodies.map((body) => {
+          const pos = body.GetPosition();
+          const angle = body.GetAngle();
+          return {
+            x: pos.x * ZOOM - 1500,
+            y: pos.y * ZOOM - 1500,
+
+            rotation: radiansToDegrees(angle),
+          };
+        })
+      );
     }
 
     try {
@@ -196,8 +259,7 @@ function App() {
   useEffect(() => {
     const debugCanvas = debugCanvasRef.current;
     if (debugCanvas && !m_debugDraw.current) {
-      // const init = () => {
-      console.log("init");
+      console.log("init!");
       document.body.appendChild(stats.dom);
 
       debugCanvas.addEventListener("mousedown", (e) => handleMouseDown(e));
@@ -212,9 +274,6 @@ function App() {
       m_debugDraw.current = draw;
 
       window.requestAnimationFrame(loop);
-
-      // };
-      // window.requestAnimationFrame(init);
     }
   });
 
@@ -280,13 +339,75 @@ function App() {
     }
   };
 
-  console.log("render App");
+  // console.log("render App");
   return (
     <div className="App">
-      <header className="App-header">Hello Box2d</header>
       <canvas ref={debugCanvasRef} width="1000" height={1000} />
+      <svg
+        width={1000}
+        height={1000}
+        viewBox="0 0 1000 1000"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        {Array.from(faceGroups).map((group, i) => {
+          const transform = faceTransforms[i];
+          return (
+            <g
+              stroke="blue"
+              transform={`translate(${transform?.x}, ${transform?.y}) rotate(${transform?.rotation})`}
+              dangerouslySetInnerHTML={{
+                __html: group.innerHTML,
+              }}
+            />
+          );
+        })}
+      </svg>
     </div>
   );
+}
+
+// line intercept math by Paul Bourke http://paulbourke.net/geometry/pointlineplane/
+// Determine the intersection point of two line segments
+// Return FALSE if the lines don't intersect
+function intersect(
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  x3: number,
+  y3: number,
+  x4: number,
+  y4: number
+) {
+  // Check if none of the lines are of length 0
+  if ((x1 === x2 && y1 === y2) || (x3 === x4 && y3 === y4)) {
+    return false;
+  }
+
+  const denominator = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
+
+  // Lines are parallel
+  if (denominator === 0) {
+    return false;
+  }
+
+  let ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denominator;
+  // let ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denominator;
+
+  // is the intersection along the segments
+  // if (ua < 0 || ua > 1 || ub < 0 || ub > 1) {
+  //   return false;
+  // }
+
+  // Return a object with the x and y coordinates of the intersection
+  let x = x1 + ua * (x2 - x1);
+  let y = y1 + ua * (y2 - y1);
+
+  return { x, y };
+}
+
+function radiansToDegrees(radians: number) {
+  return radians * (180 / Math.PI);
 }
 
 export default App;
