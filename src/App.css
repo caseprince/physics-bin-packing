@@ -2,12 +2,19 @@
   position: relative;
   background-color: #282c34;
 }
+
 canvas {
   position: absolute;
   border: 1px solid cadetblue;
 }
+
 svg {
   position: absolute;
   pointer-events: none;
 }
 
+menu {
+  position: absolute;
+  top: 180px;
+  padding: 20px;
+}

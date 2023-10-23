@@ -16,10 +16,13 @@ import {
   b2World,
   DrawJoints,
   DrawShapes,
+  DrawAABBs,
   XY,
 } from "@box2d/core";
 import { DebugDraw } from "@box2d/debug-draw";
 import Stats from "stats.js";
+import svgFile from "./svg/cat.svg";
+import { svg } from "./svg/cat"
 
 const ZOOM = 4;
 let SHEET_WIDTH = 384;
@@ -83,64 +86,59 @@ const DEBUG_SVG = `<svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/sv
 </g>
 </svg>`;
 
-const parser = new DOMParser();
-const doc = parser.parseFromString(DEBUG_SVG, "application/xml");
-// print the name of the root element or error message
-const errorNode = doc.querySelector("parsererror");
-if (errorNode) {
-  console.log("error while parsing");
-} else {
-  console.log(doc.documentElement);
-}
 
-const faceGroups = doc.documentElement.querySelectorAll("svg > g.face");
-const faceGeoms = Array.from(faceGroups).map((faceGroup) => {
-  const paths = faceGroup.querySelectorAll("path");
-  const lines = Array.from(paths).filter((path) =>
-    path.getAttribute("d")?.includes(" L ")
-  );
-  const polygonPoints: Array<{ x: number; y: number }> = [];
-  lines.forEach((line, i) => {
-    const dParts = line.getAttribute("d")?.split(" ") || [];
-    // Square off rounded corners (inaccurately!)
-    // if (dParts?.length) {
-    //   polygonPoints.push({ x: +dParts[1], y: +dParts[2] }); // "M"
-    //   polygonPoints.push({ x: +dParts[4], y: +dParts[5] }); // "L"
-    // }
 
-    const nextLineIndex = (i + 1) % lines.length;
-    const nextLine = lines[nextLineIndex];
-    const dParts2 = nextLine.getAttribute("d")?.split(" ") || [];
-    const intersection = intersect(
-      +dParts[1],
-      +dParts[2],
-      +dParts[4],
-      +dParts[5],
-      +dParts2[1],
-      +dParts2[2],
-      +dParts2[4],
-      +dParts2[5]
-    );
-    if (intersection) {
-      polygonPoints.push(intersection);
-    } else {
-      console.error("Parallel lines!?");
-    }
-  });
 
-  // # (rx ry angle large-arc-flag sweep-flag x y)
-  // Rounded corner circles can be too big for skinny triangles, and also kill FPS
-  // const circles = Array.from(paths)
-  //   .filter((path) => path.getAttribute("d")?.includes(" A "))
-  //   .map((path) => {
-  //     const dParts = path.getAttribute("d")?.split(" ");
-  //     return { radius: (dParts && +dParts[4]) as number };
-  //   });
 
-  return { polygonPoints };
-});
+interface IPoint { x: number; y: number }
 
-console.log(faceGeoms);
+// const offsetPolygonPoints = function (points: IPoint[], gapRadiusRatio: number) {
+
+//   points.forEach((pointA, i) => {
+//     let indexB = i + 1;
+//     if (indexB == points.length) {
+//       indexB = 0
+//     }
+//     let indexC = i + 2
+//     if (indexC >= points.length) {
+//       indexC -= points.length
+//     }
+//     let indexD = i - 1
+//     if (indexD < 0) {
+//       indexD = points.length - 1
+
+//       const pointB = points[indexB]
+//       const pointC = points[indexC]
+//       const pointD = points[indexD]
+//     }
+//     console.log("indexes", i, indexB, indexC, indexD)
+
+//     const gapRadius = 10
+
+//     const ADdiff = [pointD.x - pointA.x, pointD.y - pointA.y]
+//     const angleDAB = getAngle((pointD.x, pointD.y), (pointA.x, pointA.y), (pointB.x, pointB.y))
+//     const ADdist = gapRadius / Math.sin(Math.radians(angleDAB))
+//     const lengthAD = rs.Distance(convert2Dpt(pointA), convert2Dpt(pointD))
+//     const ADratio = ADdist / lengthAD
+//     const newA = {x: pointA.x + ADdiff[0] * ADratio, y: pointA.y + ADdiff.y * ADratio}
+//     points[i] = newA
+
+//     const BCDiff = [(]pointC.x - pointB.x, pointC.y - pointB.y]
+//     const angleCBA = getAngle((pointA.x, pointA.y), (pointB.x, pointB.y), (pointC.x, pointC.y))
+//     const BCdist = gapRadius / math.sin(math.radians(angleCBA))
+//     const lengthBC = rs.Distance(convert2Dpt(pointB), convert2Dpt(pointC))
+//     const BCratio = BCdist / lengthBC
+//     const newB = {x: pointB.x + BCDiff[0] * BCratio, y: pointB.y + BCDiff[1] * BCratio)}
+//     points[indexB] = newB
+
+//   })
+// }
+
+
+
+
+
+
 
 function App() {
   const debugCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -148,8 +146,91 @@ function App() {
   const [faceTransforms, setFaceTransforms] = useState<
     { x: Number; y: Number; rotation: number }[]
   >([]);
+
   const stats = new Stats();
   stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+
+  // const [svgSource, setSvgSource] = useState<string>('')
+  // useEffect(() => {
+  //   fetch(svgFile)
+  //     .then((response) => response.text())
+  //     .then((textContent) => {
+  //       setSvgSource(textContent)
+  //       console.log(textContent)
+  //     });
+  // }, [])
+  // if (!svgSource) {
+  //   return null;
+  // }
+
+  let faceGroups: NodeListOf<Element> | undefined = undefined
+  let faceGeoms: {
+    polygonPoints: {
+      x: number;
+      y: number;
+    }[]
+  }[] = [];
+  if (svg) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svg, "application/xml");
+    // print the name of the root element or error message
+    const errorNode = doc.querySelector("parsererror");
+    if (errorNode) {
+      console.log("error while parsing");
+    }
+    // } else {
+    //   console.log(doc.documentElement);
+    // }
+
+    faceGroups = doc.documentElement.querySelectorAll("svg > g.face");
+    faceGeoms = Array.from(faceGroups).map((faceGroup) => {
+      const paths = faceGroup.querySelectorAll("path");
+      const lines = Array.from(paths).filter((path) =>
+        path.getAttribute("d")?.includes(" L ")
+      );
+      const polygonPoints: Array<{ x: number; y: number }> = [];
+      lines.forEach((line, i) => {
+        const dParts = line.getAttribute("d")?.split(" ") || [];
+        // Square off rounded corners (inaccurately!)
+        // if (dParts?.length) {
+        //   polygonPoints.push({ x: +dParts[1], y: +dParts[2] }); // "M"
+        //   polygonPoints.push({ x: +dParts[4], y: +dParts[5] }); // "L"
+        // }
+
+        const nextLineIndex = (i + 1) % lines.length;
+        const nextLine = lines[nextLineIndex];
+        const dParts2 = nextLine.getAttribute("d")?.split(" ") || [];
+        const intersection = intersect(
+          +dParts[1],
+          +dParts[2],
+          +dParts[4],
+          +dParts[5],
+          +dParts2[1],
+          +dParts2[2],
+          +dParts2[4],
+          +dParts2[5]
+        );
+        if (intersection) {
+          polygonPoints.push(intersection);
+        } else {
+          console.error("Parallel lines!?");
+        }
+      });
+
+      // # (rx ry angle large-arc-flag sweep-flag x y)
+      // Rounded corner circles can be too big for skinny triangles, and also kill FPS
+      // const circles = Array.from(paths)
+      //   .filter((path) => path.getAttribute("d")?.includes(" A "))
+      //   .map((path) => {
+      //     const dParts = path.getAttribute("d")?.split(" ");
+      //     return { radius: (dParts && +dParts[4]) as number };
+      //   });
+
+      return { polygonPoints };
+    });
+  }
+  // console.log(faceGeoms);
+
 
   const gravity: XY = { x: 0, y: 100 };
   const m_world: b2World = b2World.Create(gravity);
@@ -182,36 +263,57 @@ function App() {
     ground.CreateFixture({ shape });
   }
 
-  const DEBUG_FACE_COUNT = 3;
+  //const DEBUG_FACE_COUNT = 3;
   const bodies: b2Body[] = [];
-  for (let x = 1; x < DEBUG_FACE_COUNT; x += faceGeoms.length) {
-    faceGeoms.forEach((faceGeom, i) => {
-      const shape = new b2PolygonShape();
-      // shape.SetAsBox(10 / ZOOM, 10 / ZOOM);
-      shape.Set(
-        faceGeom.polygonPoints.map((point) => ({
-          x: point.x / ZOOM,
-          y: point.y / ZOOM,
-        }))
-      );
-      const fd: b2FixtureDef = {
-        shape,
-        density: 1,
-        friction: 0.01,
-      };
-      const body = m_world.CreateBody({
-        type: b2BodyType.b2_dynamicBody,
-        position: { x: WIDTH / 2, y: (HEIGHT / 2 - 105 * (i + x)) / ZOOM },
-        // userData: m_indices[i],
-      });
-      body.CreateFixture(fd);
-      bodies.push(body);
+  let x = 1;
+  //for (let x = 1; x < DEBUG_FACE_COUNT; x += faceGeoms.length) {
+  faceGeoms.forEach((faceGeom, i) => {
+    if (i > 10) {
+      return
+    }
+    const shape = new b2PolygonShape();
+    // shape.SetAsBox(10 / ZOOM, 10 / ZOOM);
+    shape.Set(
+      faceGeom.polygonPoints.map((point) => ({
+        x: point.x / ZOOM,
+        y: point.y / ZOOM,
+      }))
+    );
+    const fd: b2FixtureDef = {
+      shape,
+      density: 1,
+      friction: 0.01,
+    };
+    const body = m_world.CreateBody({
+      type: b2BodyType.b2_dynamicBody,
+      position: { x: WIDTH / 2, y: (HEIGHT / 2 - 8 * (i + x)) / ZOOM },
+      // userData: m_indices[i],
     });
-  }
+    body.CreateFixture(fd);
+    bodies.push(body);
+  });
+  //}
 
   // LOOP
+  const [maxHeightOffset, setMaxHeightOffset] = useState(0); // Highest part's top edge (?) 
   const loop = () => {
     stats.begin();
+
+    let minY = 1000000
+    bodies.forEach((body, i) => {
+      const fix = body.GetFixtureList()
+      const upperY = fix?.GetAABB(0).lowerBound.y
+      if (upperY && minY > upperY) {
+        minY = upperY
+      }
+      if (i == 0) {
+        // console.log(upperY)
+      }
+    })
+
+    if (Math.round(minY) > Math.round(maxHeightOffset)) {
+      setMaxHeightOffset(Math.round(minY))
+    }
 
     const m_ctx = debugCanvasRef.current?.getContext("2d");
     if (m_ctx) {
@@ -231,9 +333,11 @@ function App() {
     if (draw) {
       DrawShapes(draw, m_world);
       DrawJoints(draw, m_world);
+      // DrawAABBs(draw, m_world);
     }
 
-    if (bodies.some((body) => body.IsAwake())) {
+    const SVG_RENDER = false;
+    if (SVG_RENDER && bodies.some((body) => body.IsAwake())) {
       setFaceTransforms(
         bodies.map((body) => {
           const pos = body.GetPosition();
@@ -339,7 +443,7 @@ function App() {
     }
   };
 
-  // console.log("render App");
+  console.log("render App");
   return (
     <div className="App">
       <canvas ref={debugCanvasRef} width="1000" height={1000} />
@@ -349,12 +453,13 @@ function App() {
         viewBox="0 0 1000 1000"
         xmlns="http://www.w3.org/2000/svg"
       >
-        {Array.from(faceGroups).map((group, i) => {
+        {Array.from(faceGroups || []).map((group, i) => {
           const transform = faceTransforms[i];
           return (
             <g
+              key={`face${i}`}
               stroke="blue"
-              transform={`translate(${transform?.x}, ${transform?.y}) rotate(${transform?.rotation})`}
+              transform={`translate(${transform?.x || 20}, ${transform?.y || 80}) rotate(${transform?.rotation || 0})`}
               dangerouslySetInnerHTML={{
                 __html: group.innerHTML,
               }}
@@ -362,6 +467,23 @@ function App() {
           );
         })}
       </svg>
+      <menu>
+        <p>{faceGeoms.length} Parts</p>
+        <p>Max Height: {maxHeightOffset}</p>
+        <button onClick={() => {
+          console.log("Pause!")
+          bodies.forEach(body => {
+            console.log(body.IsAwake())
+            body.SetAwake(false);
+            console.log(body.IsAwake())
+            const draw = m_debugDraw.current;
+            if (draw) {
+              DrawShapes(draw, m_world);
+            }
+
+          })
+        }}>Pause Simlulation</button>
+      </menu>
     </div>
   );
 }
