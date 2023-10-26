@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { renderToString } from 'react-dom/server';
 import "./App.css";
 import {
   b2Body,
@@ -134,18 +135,16 @@ interface IPoint { x: number; y: number }
 //   })
 // }
 
-
-
-
-
-
+interface IPartTransform { x: Number; y: Number; rotation: number }
 
 function App() {
   const debugCanvasRef = useRef<HTMLCanvasElement>(null);
   const m_debugDraw = useRef<DebugDraw>();
-  const [faceTransforms, setFaceTransforms] = useState<
-    { x: Number; y: Number; rotation: number }[]
-  >([]);
+  // const [faceTransforms, setFaceTransforms] = useState<
+  //   IPartTransform[]
+  // >([]);
+  const [paused, setPaused] = useState(false);
+  const faceTransforms = useRef<IPartTransform[]>([])
 
   const stats = new Stats();
   stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
@@ -269,7 +268,7 @@ function App() {
   //for (let x = 1; x < DEBUG_FACE_COUNT; x += faceGeoms.length) {
   faceGeoms.forEach((faceGeom, i) => {
     if (i > 10) {
-      return
+      // return
     }
     const shape = new b2PolygonShape();
     // shape.SetAsBox(10 / ZOOM, 10 / ZOOM);
@@ -312,7 +311,7 @@ function App() {
     })
 
     if (Math.round(minY) > Math.round(maxHeightOffset)) {
-      setMaxHeightOffset(Math.round(minY))
+      // setMaxHeightOffset(Math.round(minY))
     }
 
     const m_ctx = debugCanvasRef.current?.getContext("2d");
@@ -326,8 +325,8 @@ function App() {
     m_world.SetSubStepping(false);
 
     m_world.Step(1 / 60, {
-      velocityIterations: 18,
-      positionIterations: 19,
+      velocityIterations: 8,
+      positionIterations: 9,
     });
     const draw = m_debugDraw.current;
     if (draw) {
@@ -335,21 +334,30 @@ function App() {
       DrawJoints(draw, m_world);
       // DrawAABBs(draw, m_world);
     }
+    // const SVG_RENDER = false; // SVG_RENDER && 
+    if (bodies.some((body) => body.IsAwake())) {
+      // setFaceTransforms(
+      //   bodies.map((body) => {
+      //     const pos = body.GetPosition();
+      //     const angle = body.GetAngle();
+      //     return {
+      //       x: pos.x * ZOOM - 1500,
+      //       y: pos.y * ZOOM - 1500,
 
-    const SVG_RENDER = false;
-    if (SVG_RENDER && bodies.some((body) => body.IsAwake())) {
-      setFaceTransforms(
-        bodies.map((body) => {
-          const pos = body.GetPosition();
-          const angle = body.GetAngle();
-          return {
-            x: pos.x * ZOOM - 1500,
-            y: pos.y * ZOOM - 1500,
+      //       rotation: radiansToDegrees(angle),
+      //     };
+      //   })
+      // );
+      faceTransforms.current = bodies.map((body) => {
+        const pos = body.GetPosition();
+        const angle = body.GetAngle();
+        return {
+          x: pos.x * ZOOM - 1500,
+          y: pos.y * ZOOM - 1500,
 
-            rotation: radiansToDegrees(angle),
-          };
-        })
-      );
+          rotation: radiansToDegrees(angle),
+        };
+      })
     }
 
     try {
@@ -447,33 +455,15 @@ function App() {
   return (
     <div className="App">
       <canvas ref={debugCanvasRef} width="1000" height={1000} />
-      <svg
-        width={1000}
-        height={1000}
-        viewBox="0 0 1000 1000"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        {Array.from(faceGroups || []).map((group, i) => {
-          const transform = faceTransforms[i];
-          return (
-            <g
-              key={`face${i}`}
-              stroke="blue"
-              transform={`translate(${transform?.x || 20}, ${transform?.y || 80}) rotate(${transform?.rotation || 0})`}
-              dangerouslySetInnerHTML={{
-                __html: group.innerHTML,
-              }}
-            />
-          );
-        })}
-      </svg>
+      <SVGOutput faceGroups={faceGroups} faceTransforms={faceTransforms.current} />
       <menu>
         <p>{faceGeoms.length} Parts</p>
         <p>Max Height: {maxHeightOffset}</p>
         <button onClick={() => {
           console.log("Pause!")
+          setPaused(!paused)
           bodies.forEach(body => {
-            console.log(body.IsAwake())
+            // console.log(body.IsAwake()) // This seems to contradict the pink/grey debg UI state?
             body.SetAwake(false);
             console.log(body.IsAwake())
             const draw = m_debugDraw.current;
@@ -482,11 +472,44 @@ function App() {
             }
 
           })
-        }}>Pause Simlulation</button>
+        }}>{paused ? "Resume Simulation" : "Pause Simulation"}</button><br />
+        <button onClick={() => {
+          const svg = renderToString(<SVGOutput faceGroups={faceGroups} faceTransforms={faceTransforms.current} />);
+          const blob = new Blob([svg], { type: 'application/json' });
+          saveSVG(blob)
+        }}>Download SVG</button>
       </menu>
     </div>
   );
 }
+
+const SVGOutput = ({ faceGroups, faceTransforms }: { faceGroups?: NodeListOf<Element>, faceTransforms: IPartTransform[] }) => (
+  <svg
+    width={1000}
+    height={1000}
+    viewBox="0 0 1000 1000"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    {Array.from(faceGroups || []).map((group, i) => {
+      const transform = faceTransforms[i];
+      const children = Array.from(group.childNodes);
+      console.log(children);//.map(node => node))
+      return (
+        <g
+          
+          key={`face${i}`}
+          stroke="blue"
+          strokeWidth={0.1}
+          fill="none"
+          transform={`translate(${transform?.x || 20}, ${transform?.y || 80}) rotate(${transform?.rotation || 0})`}
+          dangerouslySetInnerHTML={{
+            __html: group.innerHTML,
+          }}
+        />
+      );
+    })}
+  </svg>
+)
 
 // line intercept math by Paul Bourke http://paulbourke.net/geometry/pointlineplane/
 // Determine the intersection point of two line segments
@@ -531,5 +554,15 @@ function intersect(
 function radiansToDegrees(radians: number) {
   return radians * (180 / Math.PI);
 }
+
+const saveSVG = async (blob: Blob) => {
+  const a = document.createElement('a');
+  a.download = 'output.svg';
+  a.href = URL.createObjectURL(blob);
+  a.addEventListener('click', (e) => {
+    setTimeout(() => URL.revokeObjectURL(a.href), 30 * 1000);
+  });
+  a.click();
+};
 
 export default App;
