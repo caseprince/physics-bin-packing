@@ -231,7 +231,7 @@ function App() {
   // console.log(faceGeoms);
 
 
-  const gravity: XY = { x: 0, y: 100 };
+  const gravity: XY = { x: 0, y: 80 };
   const m_world: b2World = b2World.Create(gravity);
 
   const ground = m_world.CreateBody();
@@ -280,18 +280,29 @@ function App() {
     );
     const fd: b2FixtureDef = {
       shape,
-      density: 1,
-      friction: 0.01,
+      density: 0.12,
+      // friction: 0.0024, // nice with overlaps :-(
+      friction: 0.0055,
     };
     const body = m_world.CreateBody({
       type: b2BodyType.b2_dynamicBody,
-      position: { x: WIDTH / 2, y: (HEIGHT / 2 - 8 * (i + x)) / ZOOM },
+      position: { x: WIDTH / 2, y: (HEIGHT / 2 + 11 * (i + x)) / ZOOM },
       // userData: m_indices[i],
     });
     body.CreateFixture(fd);
     bodies.push(body);
   });
-  //}
+
+  const resetFaceGeomsPosition = () => {
+    bodies.forEach((body, i) => {
+      body.SetAwake(true);
+      body.SetTransformXY(WIDTH / 2, (HEIGHT / 2 + 11 * (i + x)) / ZOOM, 0)
+      body.SetAngularVelocity(0)
+      body.SetLinearVelocity({ x: 0, y: 0 })
+      console.log(body.GetTransform())
+    });
+  }
+
 
   // LOOP
   const [maxHeightOffset, setMaxHeightOffset] = useState(0); // Highest part's top edge (?) 
@@ -322,7 +333,7 @@ function App() {
     m_world.SetAllowSleeping(true);
     m_world.SetWarmStarting(true);
     m_world.SetContinuousPhysics(true);
-    m_world.SetSubStepping(false);
+    m_world.SetSubStepping(false); // TODO: experiment
 
     m_world.Step(1 / 60, {
       velocityIterations: 8,
@@ -465,19 +476,24 @@ function App() {
           bodies.forEach(body => {
             // console.log(body.IsAwake()) // This seems to contradict the pink/grey debg UI state?
             body.SetAwake(false);
-            console.log(body.IsAwake())
+            // console.log(body.IsAwake())
             const draw = m_debugDraw.current;
             if (draw) {
               DrawShapes(draw, m_world);
             }
 
           })
-        }}>{paused ? "Resume Simulation" : "Pause Simulation"}</button><br />
+        }}>{paused ? "Resume Simulation" : "Pause Simulation"}</button>
+        <br />
         <button onClick={() => {
           const svg = renderToString(<SVGOutput faceGroups={faceGroups} faceTransforms={faceTransforms.current} />);
           const blob = new Blob([svg], { type: 'application/json' });
           saveSVG(blob)
         }}>Download SVG</button>
+        <br />
+        <button onClick={() => {
+          resetFaceGeomsPosition()
+        }}>Restart Simulation</button>
       </menu>
     </div>
   );
@@ -511,20 +527,19 @@ const SVGOutput = ({ faceGroups, faceTransforms }: { faceGroups?: NodeListOf<Ele
       path.setAttribute("d", unifiedPathD)
       const children = [path, ...rects, ...gs]
 
-      console.log(children);
       return (
         <g
-          
+
           key={`face${i}`}
           stroke="blue"
-          strokeWidth={0.1}
+          strokeWidth={0.3}
           fill="none"
           transform={`translate(${transform?.x || 20}, ${transform?.y || 80}) rotate(${transform?.rotation || 0})`}
           dangerouslySetInnerHTML={{
             __html: children.map(child => child.outerHTML).join(''), //faceGroup.innerHTML,
           }}
         >
-     
+
         </g>
       );
     })}
