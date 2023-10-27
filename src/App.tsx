@@ -490,10 +490,28 @@ const SVGOutput = ({ faceGroups, faceTransforms }: { faceGroups?: NodeListOf<Ele
     viewBox="0 0 1000 1000"
     xmlns="http://www.w3.org/2000/svg"
   >
-    {Array.from(faceGroups || []).map((group, i) => {
+    {Array.from(faceGroups || []).map((faceGroup, i) => {
       const transform = faceTransforms[i];
-      const children = Array.from(group.childNodes);
-      console.log(children);//.map(node => node))
+
+      const rects = Array.from(faceGroup.querySelectorAll("rect"));
+      const gs = Array.from(faceGroup.querySelectorAll("g"));
+
+      // Unify input paths with one Line or Arc per, into single part outline path
+      const paths = faceGroup.querySelectorAll("path");
+      // Grab first path's "M 12.34" command: (The only one we need!)
+      let unifiedPathD = paths[0].getAttribute("d")?.split(" L ")[0] || "";
+      paths.forEach(path => {
+        // Accumulate the lines and arcs, assuming intermediate "M"oves are redundant. :u)
+        const d = path.getAttribute("d") || "";
+        let lineTo = d.includes(" L ") ? ` L ${d.split(" L ")[1]}` : "";
+        let arcTo = d.includes(" A ") ? ` A ${d.split(" A ")[1]}` : "";
+        unifiedPathD += lineTo + arcTo;
+      })
+      var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", unifiedPathD)
+      const children = [path, ...rects, ...gs]
+
+      console.log(children);
       return (
         <g
           
@@ -503,9 +521,11 @@ const SVGOutput = ({ faceGroups, faceTransforms }: { faceGroups?: NodeListOf<Ele
           fill="none"
           transform={`translate(${transform?.x || 20}, ${transform?.y || 80}) rotate(${transform?.rotation || 0})`}
           dangerouslySetInnerHTML={{
-            __html: group.innerHTML,
+            __html: children.map(child => child.outerHTML).join(''), //faceGroup.innerHTML,
           }}
-        />
+        >
+     
+        </g>
       );
     })}
   </svg>
