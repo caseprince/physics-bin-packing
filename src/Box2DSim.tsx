@@ -22,11 +22,13 @@ import { DebugDraw } from "@box2d/debug-draw";
 import Stats from "stats.js";
 
 
-const ZOOM = 4;
-let SHEET_WIDTH = 384;
+const HUBSCALE = 1;
+const SCALE_FACTOR = 4; // Controls scale of units in physics world. Box2D is optimized for a certain scale.
+// Bigger is "smaller" and more performant than using mm units directly.
+let SHEET_WIDTH = 384 / 2;
 let SHEET_HEIGHT = 790;
-SHEET_WIDTH /= ZOOM;
-SHEET_HEIGHT /= ZOOM;
+SHEET_WIDTH /= SCALE_FACTOR;
+SHEET_HEIGHT /= SCALE_FACTOR;
 
 const WIDTH = 1000;
 const HEIGHT = 1000;
@@ -42,13 +44,13 @@ function Box2DSim({ svg }: { svg: string }) {
     const stats = new Stats();
     stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
 
-    let faceGroups: NodeListOf<Element> | undefined = undefined
-    let faceGeoms: {
-        polygonPoints: {
-            x: number;
-            y: number;
-        }[]
-    }[] = [];
+    // let faceGroups: NodeListOf<Element> | undefined = undefined
+    // let faceGeoms: {
+    //     polygonPoints: {
+    //         x: number;
+    //         y: number;
+    //     }[]
+    // }[] = [];
 
     const parser = new DOMParser();
     const doc = parser.parseFromString(svg, "application/xml");
@@ -57,38 +59,6 @@ function Box2DSim({ svg }: { svg: string }) {
     if (errorNode) {
         console.log("error while parsing");
     }
-
-    faceGroups = doc.documentElement.querySelectorAll("svg > g.face");
-    faceGeoms = Array.from(faceGroups).map((faceGroup) => {
-        const hitBoxPaths = faceGroup.querySelectorAll("g.hitboxes > path");
-        const dParts = hitBoxPaths[0].getAttribute("d")?.split(" ") || [];
-        /* EG: [
-            "M",
-            "30.3539465789905",
-            "-14.8089705308746",
-            "L",
-            "0.045809654247714", // Loop from index 4!
-            "-24.6159674447546",
-            "L",
-            "0.045809633959952",
-            "-1.93172136715616",
-            "L",
-            "30.3539465789905",
-            "-14.8089705308746"
-        ]*/       
-
-        const polygonPoints: Array<{ x: number; y: number }> = [];
-        for (let d = 4; d < dParts.length; d += 3) {
-            polygonPoints.push({ x: +dParts[d], y: +dParts[d+1] }); // "L"
-        }
-        if (polygonPoints.length > 7) {
-            console.warn("Warning! Hitzones with more than 7 control points will be truncated!")
-        }
-
-        return { polygonPoints };
-    });
-
-    // console.log(faceGeoms);
 
 
     const gravity: XY = { x: 0, y: 80 };
@@ -126,40 +96,101 @@ function Box2DSim({ svg }: { svg: string }) {
     const bodies: b2Body[] = [];
     let x = 1;
     //for (let x = 1; x < DEBUG_FACE_COUNT; x += faceGeoms.length) {
-    faceGeoms.forEach((faceGeom, i) => {
-        if (i > 10) {
-            // return
-        }
-        const shape = new b2PolygonShape();
-        // shape.SetAsBox(10 / ZOOM, 10 / ZOOM);
-        shape.Set(
-            faceGeom.polygonPoints.map((point) => ({
-                x: point.x / ZOOM,
-                y: point.y / ZOOM,
-            }))
-        );
-        const fd: b2FixtureDef = {
-            shape,
-            density: 0.12,
-            // friction: 0.0024, // nice with overlaps :-(
-            friction: 0.0055,
-        };
+
+    // HITBOXES!
+    const faceGroups = doc.documentElement.querySelectorAll("svg > g");
+    Array.from(faceGroups).forEach((faceGroup, i) => {
         const body = m_world.CreateBody({
             type: b2BodyType.b2_dynamicBody,
-            position: { x: WIDTH / 2, y: (HEIGHT / 2 + 11 * (i + x)) / ZOOM },
+            // position: { x: WIDTH / 2, y: (HEIGHT / 2 - 20 * (i + x)) * HUBSCALE / SCALE_FACTOR },
+            position: { x: WIDTH / 2, y: (HEIGHT * 2 - 20 * (i + x)) * HUBSCALE / SCALE_FACTOR },
             // userData: m_indices[i],
         });
-        body.CreateFixture(fd);
         bodies.push(body);
+
+        // HITBOX PATHS
+        const hitBoxPaths = faceGroup.querySelectorAll("g.hitboxes > path");
+        hitBoxPaths.forEach(path => {
+            const dParts = path.getAttribute("d")?.split(" ") || [];
+            /* EG: [
+                "M",
+                "30.3539465789905",
+                "-14.8089705308746",
+                "L",
+                "0.045809654247714", // Loop from index 4!
+                "-24.6159674447546",
+                "L",
+                "0.045809633959952",
+                "-1.93172136715616",
+                "L",
+                "30.3539465789905",
+                "-14.8089705308746"
+            ]*/
+
+            const polygonPoints: Array<{ x: number; y: number }> = [];
+            for (let d = 4; d < dParts.length; d += 3) {
+                polygonPoints.push({ x: +dParts[d], y: +dParts[d + 1] }); // "L"
+            }
+            if (polygonPoints.length > 7) {
+                console.warn("Warning! Hitzones with more than 7 control points will be truncated!")
+            }
+
+            const shape = new b2PolygonShape();
+            // shape.SetAsBox(10 / SCALE_FACTOR, 10 / SCALE_FACTOR);
+            shape.Set(
+                polygonPoints.map((point) => ({
+                    x: point.x / SCALE_FACTOR,
+                    y: point.y / SCALE_FACTOR,
+                }))
+            );
+            const fd: b2FixtureDef = {
+                shape,
+                density: 0.12,
+                friction: 0.0055,
+            };
+
+            body.CreateFixture(fd);
+        })
+
+        // HITBOX RECTS
+        const hitBoxRects = faceGroup.querySelectorAll("g.hitboxes > rect");
+        console.log(hitBoxRects)
+        hitBoxRects.forEach(rect => {
+            const x = +(rect.getAttribute("x") as string) / SCALE_FACTOR * HUBSCALE
+            const y = +(rect.getAttribute("y") as string) / SCALE_FACTOR * HUBSCALE
+            let width = +(rect.getAttribute("width") as string) / SCALE_FACTOR * HUBSCALE
+            let height = +(rect.getAttribute("height") as string) / SCALE_FACTOR * HUBSCALE
+            const transform = rect.getAttribute("transform");
+            let rotation = 0;
+            if (transform) {
+                console.log(transform, transform.split("rotate("))
+                rotation = +(transform.split("rotate(")[1].slice(0, -1)) // this is gross but regex is hard
+            }
+            console.log(x, y, width, height, rotation)
+            let center = { x: x + width / 2, y: y + height / 2 };
+            if (rotation) {
+                center = rotateAroundOrigin(center.x, center.y, degreesToRadians(-rotation))
+            }
+            const shape = new b2PolygonShape();
+            shape.SetAsBox(width / 2, height / 2, center, degreesToRadians(rotation))
+
+            const fd: b2FixtureDef = {
+                shape,
+                density: 0.12,
+                friction: 0.0055,
+            };
+
+            body.CreateFixture(fd);
+        })
     });
 
     const resetFaceGeomsPosition = () => {
         bodies.forEach((body, i) => {
             body.SetAwake(true);
-            body.SetTransformXY(WIDTH / 2, (HEIGHT / 2 + 11 * (i + x)) / ZOOM, 0)
+            body.SetTransformXY(WIDTH / 2, (HEIGHT / 2 + 11 * (i + x)) / SCALE_FACTOR, 0)
             body.SetAngularVelocity(0)
             body.SetLinearVelocity({ x: 0, y: 0 })
-            console.log(body.GetTransform())
+            // console.log(body.GetTransform())
         });
     }
 
@@ -211,8 +242,8 @@ function Box2DSim({ svg }: { svg: string }) {
                 const pos = body.GetPosition();
                 const angle = body.GetAngle();
                 return {
-                    x: pos.x * ZOOM - 1500,
-                    y: pos.y * ZOOM - 1500,
+                    x: pos.x * SCALE_FACTOR - 1500,
+                    y: pos.y * SCALE_FACTOR - 1500,
 
                     rotation: radiansToDegrees(angle),
                 };
@@ -240,8 +271,8 @@ function Box2DSim({ svg }: { svg: string }) {
             const m_ctx = debugCanvas.getContext("2d");
             if (!m_ctx) throw new Error("Could not create 2d context for debug-draw");
             const draw = new DebugDraw(m_ctx);
-            // draw.Prepare(500 / ZOOM, 500 / ZOOM, 1 / ZOOM, false);
-            draw.Prepare(WIDTH / 2, HEIGHT / 2, ZOOM, false);
+            // draw.Prepare(500 / SCALE_FACTOR, 500 / SCALE_FACTOR, 1 / SCALE_FACTOR, false);
+            draw.Prepare(WIDTH / 2, HEIGHT / 2, SCALE_FACTOR, false);
             m_debugDraw.current = draw;
 
             window.requestAnimationFrame(loop);
@@ -301,7 +332,7 @@ function Box2DSim({ svg }: { svg: string }) {
     const unProjectMouseEvent = (e: MouseEvent): b2Vec2 => {
         const xDiff = e.offsetX - WIDTH / 2;
         const yDiff = e.offsetY - HEIGHT / 2;
-        return new b2Vec2(WIDTH / 2 + xDiff / ZOOM, HEIGHT / 2 + yDiff / ZOOM);
+        return new b2Vec2(WIDTH / 2 + xDiff / SCALE_FACTOR, HEIGHT / 2 + yDiff / SCALE_FACTOR);
     };
     const handleMouseUp = (e: MouseEvent): void => {
         if (m_mouseJoint) {
@@ -316,7 +347,7 @@ function Box2DSim({ svg }: { svg: string }) {
             <canvas ref={debugCanvasRef} width="1000" height={1000} />
             <SVGOutput faceGroups={faceGroups} faceTransforms={faceTransforms.current} />
             <menu>
-                <p>{faceGeoms.length} Parts</p>
+                <p>{faceGroups.length} Parts</p>
                 <p>Max Height: {maxHeightOffset}</p>
                 <button onClick={() => {
                     console.log("Pause!")
@@ -357,24 +388,30 @@ const SVGOutput = ({ faceGroups, faceTransforms }: { faceGroups?: NodeListOf<Ele
         {Array.from(faceGroups || []).map((faceGroup, i) => {
             const transform = faceTransforms[i];
 
-            const rects = Array.from(faceGroup.querySelectorAll("rect"));
-            const gs = Array.from(faceGroup.querySelectorAll("g"));
-
-            // Unify input paths with one Line or Arc per, into single part outline path
-            const paths = faceGroup.querySelectorAll("path");
-            // Grab first path's "M 12.34" command: (The only one we need!)
-            let unifiedPathD = paths[0].getAttribute("d")?.split(" L ")[0] || "";
-            paths.forEach(path => {
-                // Accumulate the lines and arcs, assuming intermediate "M"oves are redundant. :u)
-                const d = path.getAttribute("d") || "";
-                let lineTo = d.includes(" L ") ? ` L ${d.split(" L ")[1]}` : "";
-                let arcTo = d.includes(" A ") ? ` A ${d.split(" A ")[1]}` : "";
-                unifiedPathD += lineTo + arcTo;
+            // const rects = Array.from(faceGroup.querySelectorAll("> rect"));
+            // const paths = Array.from(faceGroup.querySelectorAll("> path"));
+            const toolpaths = Array.from(faceGroup.children).filter(child => {
+                // console.log(child.className)
+                // console.log(child.classList)
+                return !Array.from(child.classList).includes("hitboxes")
             })
-            var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            path.setAttribute("d", unifiedPathD)
-            const children = [path, ...rects, ...gs]
 
+            // // Unify input paths with one Line or Arc per, into single part outline path
+            // const paths = faceGroup.querySelectorAll("path");
+            // // Grab first path's "M 12.34" command: (The only one we need!)
+            // let unifiedPathD = paths[0].getAttribute("d")?.split(" L ")[0] || "";
+            // paths.forEach(path => {
+            //     // Accumulate the lines and arcs, assuming intermediate "M"oves are redundant. :u)
+            //     const d = path.getAttribute("d") || "";
+            //     let lineTo = d.includes(" L ") ? ` L ${d.split(" L ")[1]}` : "";
+            //     let arcTo = d.includes(" A ") ? ` A ${d.split(" A ")[1]}` : "";
+            //     unifiedPathD += lineTo + arcTo;
+            // })
+            // var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            // path.setAttribute("d", unifiedPathD)
+            // const children = [...paths, ...rects] // Filters out g.hitboxes
+
+            Array.from(faceGroup.querySelectorAll("g"));
             return (
                 <g
 
@@ -384,7 +421,8 @@ const SVGOutput = ({ faceGroups, faceTransforms }: { faceGroups?: NodeListOf<Ele
                     fill="none"
                     transform={`translate(${transform?.x || 20}, ${transform?.y || 80}) rotate(${transform?.rotation || 0})`}
                     dangerouslySetInnerHTML={{
-                        __html: children.map(child => child.outerHTML).join(''), //faceGroup.innerHTML,
+                        __html: toolpaths.map(child => child.outerHTML).join(''),
+                        //__html: faceGroup.innerHTML,
                     }}
                 >
 
@@ -396,6 +434,17 @@ const SVGOutput = ({ faceGroups, faceTransforms }: { faceGroups?: NodeListOf<Ele
 
 function radiansToDegrees(radians: number) {
     return radians * (180 / Math.PI);
+}
+function degreesToRadians(degrees: number) {
+    return degrees * (Math.PI / 180);
+}
+
+function rotateAroundOrigin(x: number, y: number, radians: number) {
+    // """Only rotate a point around the origin (0, 0)."""
+    const xx = x * Math.cos(radians) + y * Math.sin(radians)
+    const yy = -x * Math.sin(radians) + y * Math.cos(radians)
+
+    return { x: xx, y: yy }
 }
 
 const saveSVG = async (blob: Blob) => {

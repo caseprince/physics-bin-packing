@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import "./App.css";
 import Box2DSim from "./Box2DSim";
-import svgFile from "./svg/cat_faces.svg";
+import svgFile from "./svg/cat_hubs.svg";
 
 
 function App() {
@@ -12,7 +12,7 @@ function App() {
       .then((response) => response.text())
       .then((textContent) => {
         setSvgSource(textContent)
-        // console.log(textContent)
+        console.log(textContent)
       });
   })
 
