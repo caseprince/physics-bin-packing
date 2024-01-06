@@ -25,7 +25,7 @@ import Stats from "stats.js";
 const HUBSCALE = 1;
 const SCALE_FACTOR = 4; // Controls scale of units in physics world. Box2D is optimized for a certain scale.
 // Bigger is "smaller" and more performant than using mm units directly.
-let SHEET_WIDTH = 384 / 2;
+let SHEET_WIDTH = 384; // / 2;
 let SHEET_HEIGHT = 790;
 SHEET_WIDTH /= SCALE_FACTOR;
 SHEET_HEIGHT /= SCALE_FACTOR;
@@ -60,8 +60,7 @@ function Box2DSim({ svg }: { svg: string }) {
         console.log("error while parsing");
     }
 
-
-    const gravity: XY = { x: 0, y: 80 };
+    const gravity: XY = { x: 0, y: 2 };
     const m_world: b2World = b2World.Create(gravity);
 
     const ground = m_world.CreateBody();
@@ -95,22 +94,28 @@ function Box2DSim({ svg }: { svg: string }) {
     //const DEBUG_FACE_COUNT = 3;
     const bodies: b2Body[] = [];
     let x = 1;
+    const cols = 7;
     //for (let x = 1; x < DEBUG_FACE_COUNT; x += faceGeoms.length) {
 
-    // HITBOXES!
     const faceGroups = doc.documentElement.querySelectorAll("svg > g");
+    const hitBoxPathSummedLengths: number[] = [];
     Array.from(faceGroups).forEach((faceGroup, i) => {
         const body = m_world.CreateBody({
             type: b2BodyType.b2_dynamicBody,
             // position: { x: WIDTH / 2, y: (HEIGHT / 2 - 20 * (i + x)) * HUBSCALE / SCALE_FACTOR },
-            position: { x: WIDTH / 2, y: (HEIGHT * 2 - 20 * (i + x)) * HUBSCALE / SCALE_FACTOR },
+            // position: { x: WIDTH / 2, y: (HEIGHT * 2 - 10 * (i + x)) * HUBSCALE / SCALE_FACTOR },
+            // position: { x: WIDTH / 2, y: (HEIGHT * 2 - 2 * (i + x)) * HUBSCALE / SCALE_FACTOR },
+            // position: { x: WIDTH / 2, y: (HEIGHT * 2 - 35 * (i + x)) * HUBSCALE / SCALE_FACTOR }, // single col
+
+            // Hubs grid
+            position: { x: WIDTH / 2 - 25 + ((i % cols) / cols) * 55, y: (HEIGHT * 2.4 - 22 * (Math.floor(i/cols) + x)) * HUBSCALE / SCALE_FACTOR },
             // userData: m_indices[i],
         });
         bodies.push(body);
-
+        hitBoxPathSummedLengths.push(0)
         // HITBOX PATHS
         const hitBoxPaths = faceGroup.querySelectorAll("g.hitboxes > path");
-        hitBoxPaths.forEach(path => {
+        hitBoxPaths.forEach((path, i) => {
             const dParts = path.getAttribute("d")?.split(" ") || [];
             /* EG: [
                 "M",
@@ -135,6 +140,14 @@ function Box2DSim({ svg }: { svg: string }) {
                 console.warn("Warning! Hitzones with more than 7 control points will be truncated!")
             }
 
+            for (let p = 0; p < polygonPoints.length; p++) {
+                const point1 = polygonPoints[p]
+                const point2 = polygonPoints[(p + 1) % polygonPoints.length]
+                const xDif = point1.x - point2.x;
+                const yDif = point1.y - point2.y;
+                hitBoxPathSummedLengths[i] += Math.sqrt(xDif * xDif + yDif * yDif)
+            }
+
             const shape = new b2PolygonShape();
             // shape.SetAsBox(10 / SCALE_FACTOR, 10 / SCALE_FACTOR);
             shape.Set(
@@ -145,8 +158,8 @@ function Box2DSim({ svg }: { svg: string }) {
             );
             const fd: b2FixtureDef = {
                 shape,
-                density: 0.12,
-                friction: 0.0055,
+                density: 0.22,
+                friction: 0.0004,
             };
 
             body.CreateFixture(fd);
@@ -380,8 +393,8 @@ function Box2DSim({ svg }: { svg: string }) {
 
 const SVGOutput = ({ faceGroups, faceTransforms }: { faceGroups?: NodeListOf<Element>, faceTransforms: IPartTransform[] }) => (
     <svg
-        width={1000}
-        height={1000}
+        width="1000mm"
+        height="1000mm"
         viewBox="0 0 1000 1000"
         xmlns="http://www.w3.org/2000/svg"
     >

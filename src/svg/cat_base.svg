@@ -1,0 +1,33 @@
+<svg width="1000mm" height="1000mm" viewBox="0 -100 1000 1000" xmlns="http://www.w3.org/2000/svg">
+<g class="face" fill="none" stroke="blue" stroke-width="0.1">
+<path d="M 23.0329130044841 -196.796872140628 L 6.35301478869895 -190.916889372056 Q 3.52366919538597 -189.919490999488 3.52366919538599 -186.919490999488 L 3.52366919538599 -161.982635264045 Q 3.52366919538597 -158.982635264045 0.566322366460874 -158.478552201994 L -51.7153332309753 -149.56708575346 Q -54.6726800599004 -149.063002691409 -55.7670554908942 -146.269735354394 L -87.8424604877186 -64.4009556269347 Q -88.9368359187123 -61.6076882899192 -86.8473064118223 -59.4550465547864 L -33.0394206202041 -4.0219453459439 Q -30.949891113314 -1.86930361081104 -27.98585511134 -2.33243488701898 L 40.9580616792096 -13.1049370255613 Q 43.9220976811836 -13.5680683017692 45.7939205546969 -15.9124827553573 L 81.4173574523444 -60.5300058827309 Q 83.2891803258577 -62.8744203363189 83.6610576597895 -65.8512823164093 L 88.1813732405623 -102.036213105658 Q 88.5532505744941 -105.013075085748 87.5461059559049 -107.838966045649 L 71.5011030831873 -152.858745462332 Q 70.493958464598 -155.684636422233 71.5654776459846 -158.486751095818 L 78.6258770626101 -176.950301865946 Q 79.6973962439967 -179.752416539531 78.6622795639067 -182.568181703496 L 71.1051983209563 -203.125251756027 Q 70.0700816408663 -205.941016919992 67.0997233247577 -205.520337144005 L 49.2759647369963 -202.996030655699 Q 46.3056064208877 -202.575350879712 46.1471767198293 -199.579537128855 L 44.2382395563822 -163.482642635144 Q 44.2064690092887 -162.881880017913 43.616943692301 -162.761942573572 Q 43.0274183753132 -162.64200512923 42.7634417733083 -163.182598732151 L 27.1786266798126 -195.098500665332 Q 25.8622585977971 -197.794270513196 23.0329130044842 -196.796872140628 " />
+<rect x="-2.304" y="-7.616" width="4.554" height="3.554" transform="translate(17.1538,-196.4093) rotate(-199.4185)" />
+<text transform="translate(17.1538,-196.4093) rotate(-199.4185)" x="0" y="-1.939" font-family="Times New Roman" font-size="3" stroke="black" text-anchor="middle">2</text>
+<rect x="-2.304" y="-9.5507" width="4.554" height="3.554" transform="translate(0.0,-175.2251) rotate(-270.0)" />
+<text transform="translate(0.0,-175.2251) rotate(-270.0)" x="0" y="-3.8737" font-family="Times New Roman" font-size="3" stroke="black" text-anchor="middle">5</text>
+<rect x="-2.304" y="-7.7088" width="4.554" height="3.554" transform="translate(-27.9392,-155.3258) rotate(-189.6732)" />
+<text transform="translate(-27.9392,-155.3258) rotate(-189.6732)" x="0" y="-2.0318" font-family="Times New Roman" font-size="3" stroke="black" text-anchor="middle">3</text>
+<rect x="-2.304" y="-7.6971" width="4.554" height="3.554" transform="translate(-73.3453,-105.9814) rotate(-248.6052)" />
+<text transform="translate(-73.3453,-105.9814) rotate(-248.6052)" x="0" y="-2.0201" font-family="Times New Roman" font-size="3" stroke="black" text-anchor="middle">1</text>
+<rect x="-2.304" y="-7.5179" width="4.554" height="3.554" transform="translate(-61.0127,-30.6996) rotate(-314.1477)" />
+<text transform="translate(-61.0127,-30.6996) rotate(-314.1477)" x="0" y="-1.8409" font-family="Times New Roman" font-size="3" stroke="black" text-anchor="middle">4</text>
+<rect x="-2.304" y="-7.8333" width="4.554" height="3.554" transform="translate(6.5489,-5.9003) rotate(-8.8807)" />
+<text transform="translate(6.5489,-5.9003) rotate(-8.8807)" x="0" y="-2.1563" font-family="Times New Roman" font-size="3" stroke="black" text-anchor="middle">10</text>
+<rect x="-2.304" y="-7.4336" width="4.554" height="3.554" transform="translate(64.5503,-37.15) rotate(-51.3955)" />
+<text transform="translate(64.5503,-37.15) rotate(-51.3955)" x="0" y="-1.7566" font-family="Times New Roman" font-size="3" stroke="black" text-anchor="middle">11</text>
+<rect x="-2.304" y="-7.5624" width="4.554" height="3.554" transform="translate(87.5546,-84.6324) rotate(-82.8794)" />
+<text transform="translate(87.5546,-84.6324) rotate(-82.8794)" x="0" y="-1.8854" font-family="Times New Roman" font-size="3" stroke="black" text-anchor="middle">13</text>
+<rect x="-2.304" y="-8.2791" width="4.554" height="3.554" transform="translate(81.5239,-131.4446) rotate(-109.616)" />
+<text transform="translate(81.5239,-131.4446) rotate(-109.616)" x="0" y="-2.6021" font-family="Times New Roman" font-size="3" stroke="black" text-anchor="middle">12</text>
+<rect x="-2.304" y="-7.9572" width="4.554" height="3.554" transform="translate(77.7465,-169.2466) rotate(-69.0733)" />
+<text transform="translate(77.7465,-169.2466) rotate(-69.0733)" x="0" y="-2.2802" font-family="Times New Roman" font-size="3" stroke="black" text-anchor="middle">14</text>
+<rect x="-2.304" y="-9.8089" width="4.554" height="3.554" transform="translate(78.0496,-195.1956) rotate(-110.1842)" />
+<text transform="translate(78.0496,-195.1956) rotate(-110.1842)" x="0" y="-4.1319" font-family="Times New Roman" font-size="3" stroke="black" text-anchor="middle">9</text>
+<rect x="-2.304" y="-7.6293" width="4.554" height="3.554" transform="translate(55.0943,-205.4383) rotate(-188.061)" />
+<text transform="translate(55.0943,-205.4383) rotate(-188.061)" x="0" y="-1.9523" font-family="Times New Roman" font-size="3" stroke="black" text-anchor="middle">6</text>
+<rect x="-2.304" y="-9.4541" width="4.554" height="3.554" transform="translate(42.1551,-188.9859) rotate(-266.9728)" />
+<text transform="translate(42.1551,-188.9859) rotate(-266.9728)" x="0" y="-3.7771" font-family="Times New Roman" font-size="3" stroke="black" text-anchor="middle">8</text>
+<rect x="-2.304" y="-9.6391" width="4.554" height="3.554" transform="translate(34.9829,-187.3482) rotate(-116.0267)" />
+<text transform="translate(34.9829,-187.3482) rotate(-116.0267)" x="0" y="-3.9621" font-family="Times New Roman" font-size="3" stroke="black" text-anchor="middle">7</text>
+</g>
+</svg>
