@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import "./App.css";
 import Box2DSim from "./Box2DSim";
 // import svgFile from "./svg/cat_hubs.svg";
-// import svgFile from "./svg/cat_faces.svg";
-import svgFile from "./svg/cat_faces1.svg";
+ import svgFile from "./svg/cat_faces.svg";
+// import svgFile from "./svg/cat_faces2.svg";
 
 function App() {
   const [svgSource, setSvgSource] = useState<string>('')

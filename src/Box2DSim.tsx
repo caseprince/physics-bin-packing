@@ -94,10 +94,12 @@ function Box2DSim({ svg }: { svg: string }) {
     //const DEBUG_FACE_COUNT = 3;
     const bodies: b2Body[] = [];
     let x = 1;
-    const cols = 7;
+    // const cols = 4; // 5 500
+    const cols = 6; // 500
     //for (let x = 1; x < DEBUG_FACE_COUNT; x += faceGeoms.length) {
 
     const faceGroups = doc.documentElement.querySelectorAll("svg > g");
+    console.log("Faces: "+faceGroups.length)
     const hitBoxPathSummedLengths: number[] = [];
     Array.from(faceGroups).forEach((faceGroup, i) => {
         const body = m_world.CreateBody({
@@ -167,7 +169,7 @@ function Box2DSim({ svg }: { svg: string }) {
 
         // HITBOX RECTS
         const hitBoxRects = faceGroup.querySelectorAll("g.hitboxes > rect");
-        console.log(hitBoxRects)
+        // console.log(hitBoxRects)
         hitBoxRects.forEach(rect => {
             const x = +(rect.getAttribute("x") as string) / SCALE_FACTOR * HUBSCALE
             const y = +(rect.getAttribute("y") as string) / SCALE_FACTOR * HUBSCALE
@@ -179,7 +181,7 @@ function Box2DSim({ svg }: { svg: string }) {
                 console.log(transform, transform.split("rotate("))
                 rotation = +(transform.split("rotate(")[1].slice(0, -1)) // this is gross but regex is hard
             }
-            console.log(x, y, width, height, rotation)
+            // console.log(x, y, width, height, rotation)
             let center = { x: x + width / 2, y: y + height / 2 };
             if (rotation) {
                 center = rotateAroundOrigin(center.x, center.y, degreesToRadians(-rotation))
@@ -213,21 +215,18 @@ function Box2DSim({ svg }: { svg: string }) {
     const loop = () => {
         stats.begin();
 
-        let minY = 1000000
+        let maxY = 0
         bodies.forEach((body, i) => {
             const fix = body.GetFixtureList()
-            const upperY = fix?.GetAABB(0).lowerBound.y
-            if (upperY && minY > upperY) {
-                minY = upperY
-            }
-            if (i == 0) {
-                // console.log(upperY)
-            }
+            const upperY = 1000 - 16 - (fix?.GetAABB(0).upperBound.y || 0)
+            if (upperY && maxY < upperY) {
+                maxY = upperY
+            }  
         })
 
-        if (Math.round(minY) > Math.round(maxHeightOffset)) {
-            // setMaxHeightOffset(Math.round(minY))
-        }
+        //if (Math.round(minY) > Math.round(maxHeightOffset)) {
+            setMaxHeightOffset(Math.round(maxY))
+        //}
 
         const m_ctx = debugCanvasRef.current?.getContext("2d");
         if (m_ctx) {
