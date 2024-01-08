@@ -106,27 +106,19 @@ function Box2DSim({ svg }: { svg: string }) {
         ground.CreateFixture({ shape });
     }
 
-    //const DEBUG_FACE_COUNT = 3;
     const bodies: b2Body[] = [];
     useEffect(() => positionBodies)
-    let x = 1;
-    // const cols = 4; // 5 500
-    const cols = 6; // 500
-    //for (let x = 1; x < DEBUG_FACE_COUNT; x += faceGeoms.length) {
-    let rng = useRef(new Prando(seed.current));
-    
-
-    const hitBoxPathSummedLengths: number[] = [];
-    
+    const cols = 6;
+   
     const positionBodies = () => {
-        rng.current = new Prando(seed.current);
+        const rng = new Prando(seed.current);
         // console.log("positionBodies: "+seed.current)
         const bodiesToRandomSort = [...bodies]
         bodiesToRandomSort.sort((a, b) => a.GetUserData().index - b.GetUserData().index)
-        bodiesToRandomSort.sort(() => rng.current.next(-1, 1))
+        bodiesToRandomSort.sort(() => rng.next(-1, 1))
         bodiesToRandomSort.forEach((body, i) => {
             body.SetAwake(true);
-            body.SetTransformXY(WIDTH / 2 - 25 + ((i % cols) / cols) * 55, (HEIGHT * 2.4 - 22 * (Math.floor(i/cols) + x)) * HUBSCALE / SCALE_FACTOR, 0)
+            body.SetTransformXY(WIDTH / 2 - 25 + ((i % cols) / cols) * 55, (HEIGHT * 2.4 - 22 * (Math.floor(i/cols) + 1)) * HUBSCALE / SCALE_FACTOR, 0)
             body.ApplyTorque(20)
             body.SetAngularVelocity(0)
             body.SetLinearVelocity({ x: 0, y: 0 })
@@ -137,98 +129,104 @@ function Box2DSim({ svg }: { svg: string }) {
         });
     }
 
-    const faceGroups = Array.from(doc.documentElement.querySelectorAll("svg > g"));
-    faceGroups.forEach((faceGroup, i) => {
-        const body = m_world.CreateBody({
-            type: b2BodyType.b2_dynamicBody,
-            position: { x: 0, y: 0},
-            userData: {index: i},
+    let faceGroups: Element[] = [];
+    const parseSvg = () => {
+        faceGroups = Array.from(doc.documentElement.querySelectorAll("svg > g"));
+        const hitBoxPathSummedLengths: number[] = [];
+        faceGroups.forEach((faceGroup, i) => {
+            const body = m_world.CreateBody({
+                type: b2BodyType.b2_dynamicBody,
+                position: { x: 0, y: 0},
+                userData: {index: i},
+            });
+            bodies.push(body);
+            hitBoxPathSummedLengths.push(0)
+            // HITBOX PATHS
+            const hitBoxPaths = faceGroup.querySelectorAll("g.hitboxes > path");
+            hitBoxPaths.forEach((path, i) => {
+                const dParts = path.getAttribute("d")?.split(" ") || [];
+                /* EG: [
+                    "M",
+                    "30.3539465789905",
+                    "-14.8089705308746",
+                    "L",
+                    "0.045809654247714", // Loop from index 4!
+                    "-24.6159674447546",
+                    "L",
+                    "0.045809633959952",
+                    "-1.93172136715616",
+                    "L",
+                    "30.3539465789905",
+                    "-14.8089705308746"
+                ]*/
+
+                const polygonPoints: Array<{ x: number; y: number }> = [];
+                for (let d = 4; d < dParts.length; d += 3) {
+                    polygonPoints.push({ x: +dParts[d], y: +dParts[d + 1] }); // "L"
+                }
+                if (polygonPoints.length > 7) {
+                    console.warn("Warning! Hitzones with more than 7 control points will be truncated!")
+                }
+
+                for (let p = 0; p < polygonPoints.length; p++) {
+                    const point1 = polygonPoints[p]
+                    const point2 = polygonPoints[(p + 1) % polygonPoints.length]
+                    const xDif = point1.x - point2.x;
+                    const yDif = point1.y - point2.y;
+                    hitBoxPathSummedLengths[i] += Math.sqrt(xDif * xDif + yDif * yDif)
+                }
+
+                const shape = new b2PolygonShape();
+                // shape.SetAsBox(10 / SCALE_FACTOR, 10 / SCALE_FACTOR);
+                shape.Set(
+                    polygonPoints.map((point) => ({
+                        x: point.x / SCALE_FACTOR,
+                        y: point.y / SCALE_FACTOR,
+                    }))
+                );
+                const fd: b2FixtureDef = {
+                    shape,
+                    density: 0.22,
+                    friction: 0.0004,
+                };
+
+                body.CreateFixture(fd);
+            })
+
+            // HITBOX RECTS
+            const hitBoxRects = faceGroup.querySelectorAll("g.hitboxes > rect");
+            // console.log(hitBoxRects)
+            hitBoxRects.forEach(rect => {
+                const x = +(rect.getAttribute("x") as string) / SCALE_FACTOR * HUBSCALE
+                const y = +(rect.getAttribute("y") as string) / SCALE_FACTOR * HUBSCALE
+                let width = +(rect.getAttribute("width") as string) / SCALE_FACTOR * HUBSCALE
+                let height = +(rect.getAttribute("height") as string) / SCALE_FACTOR * HUBSCALE
+                const transform = rect.getAttribute("transform");
+                let rotation = 0;
+                if (transform) {
+                    console.log(transform, transform.split("rotate("))
+                    rotation = +(transform.split("rotate(")[1].slice(0, -1)) // this is gross but regex is hard
+                }
+                // console.log(x, y, width, height, rotation)
+                let center = { x: x + width / 2, y: y + height / 2 };
+                if (rotation) {
+                    center = rotateAroundOrigin(center.x, center.y, degreesToRadians(-rotation))
+                }
+                const shape = new b2PolygonShape();
+                shape.SetAsBox(width / 2, height / 2, center, degreesToRadians(rotation))
+
+                const fd: b2FixtureDef = {
+                    shape,
+                    density: 0.12,
+                    friction: 0.0055,
+                };
+
+                body.CreateFixture(fd);
+            })
         });
-        bodies.push(body);
-        hitBoxPathSummedLengths.push(0)
-        // HITBOX PATHS
-        const hitBoxPaths = faceGroup.querySelectorAll("g.hitboxes > path");
-        hitBoxPaths.forEach((path, i) => {
-            const dParts = path.getAttribute("d")?.split(" ") || [];
-            /* EG: [
-                "M",
-                "30.3539465789905",
-                "-14.8089705308746",
-                "L",
-                "0.045809654247714", // Loop from index 4!
-                "-24.6159674447546",
-                "L",
-                "0.045809633959952",
-                "-1.93172136715616",
-                "L",
-                "30.3539465789905",
-                "-14.8089705308746"
-            ]*/
+    }
 
-            const polygonPoints: Array<{ x: number; y: number }> = [];
-            for (let d = 4; d < dParts.length; d += 3) {
-                polygonPoints.push({ x: +dParts[d], y: +dParts[d + 1] }); // "L"
-            }
-            if (polygonPoints.length > 7) {
-                console.warn("Warning! Hitzones with more than 7 control points will be truncated!")
-            }
-
-            for (let p = 0; p < polygonPoints.length; p++) {
-                const point1 = polygonPoints[p]
-                const point2 = polygonPoints[(p + 1) % polygonPoints.length]
-                const xDif = point1.x - point2.x;
-                const yDif = point1.y - point2.y;
-                hitBoxPathSummedLengths[i] += Math.sqrt(xDif * xDif + yDif * yDif)
-            }
-
-            const shape = new b2PolygonShape();
-            // shape.SetAsBox(10 / SCALE_FACTOR, 10 / SCALE_FACTOR);
-            shape.Set(
-                polygonPoints.map((point) => ({
-                    x: point.x / SCALE_FACTOR,
-                    y: point.y / SCALE_FACTOR,
-                }))
-            );
-            const fd: b2FixtureDef = {
-                shape,
-                density: 0.22,
-                friction: 0.0004,
-            };
-
-            body.CreateFixture(fd);
-        })
-
-        // HITBOX RECTS
-        const hitBoxRects = faceGroup.querySelectorAll("g.hitboxes > rect");
-        // console.log(hitBoxRects)
-        hitBoxRects.forEach(rect => {
-            const x = +(rect.getAttribute("x") as string) / SCALE_FACTOR * HUBSCALE
-            const y = +(rect.getAttribute("y") as string) / SCALE_FACTOR * HUBSCALE
-            let width = +(rect.getAttribute("width") as string) / SCALE_FACTOR * HUBSCALE
-            let height = +(rect.getAttribute("height") as string) / SCALE_FACTOR * HUBSCALE
-            const transform = rect.getAttribute("transform");
-            let rotation = 0;
-            if (transform) {
-                console.log(transform, transform.split("rotate("))
-                rotation = +(transform.split("rotate(")[1].slice(0, -1)) // this is gross but regex is hard
-            }
-            // console.log(x, y, width, height, rotation)
-            let center = { x: x + width / 2, y: y + height / 2 };
-            if (rotation) {
-                center = rotateAroundOrigin(center.x, center.y, degreesToRadians(-rotation))
-            }
-            const shape = new b2PolygonShape();
-            shape.SetAsBox(width / 2, height / 2, center, degreesToRadians(rotation))
-
-            const fd: b2FixtureDef = {
-                shape,
-                density: 0.12,
-                friction: 0.0055,
-            };
-
-            body.CreateFixture(fd);
-        })
-    });
+    
 
     
 
@@ -252,12 +250,12 @@ function Box2DSim({ svg }: { svg: string }) {
         // setSeedState(seed.current);
         positionBodies();
     }
-    useEffect(() => {
-        const interval = setInterval(() => {
-            bumpSeed()
-        }, 30000)
-        return () => clearInterval(interval)
-    }, [])
+    // useEffect(() => {
+    //     const interval = setInterval(() => {
+    //         bumpSeed()
+    //     }, 30000)
+    //     return () => clearInterval(interval)
+    // }, [])
     
 
     // LOOP
@@ -273,7 +271,7 @@ function Box2DSim({ svg }: { svg: string }) {
         m_world.SetContinuousPhysics(true);
         m_world.SetSubStepping(false); // TODO: experiment
 
-        m_world.Step(1 / 60, {
+        m_world.Step(1 / 30, {
             velocityIterations: 8,
             positionIterations: 9,
         });
@@ -331,6 +329,8 @@ function Box2DSim({ svg }: { svg: string }) {
     useEffect(() => {
         const debugCanvas = debugCanvasRef.current;
         if (debugCanvas && !m_debugDraw.current) {
+            parseSvg();
+
             console.log("init!");
             document.body.appendChild(stats.dom);
 
