@@ -55,7 +55,7 @@ function Box2DSim({ svg }: { svg: string }) {
     best seed: 346 height: 508.14192019493265
     best seed: 522 height: 507.99502596668583
     */
-    const seed = useRef(346)
+    const seed = useRef(522)
     const [seedState, setSeedState] = useState(seed.current)
     
 
@@ -67,19 +67,46 @@ function Box2DSim({ svg }: { svg: string }) {
     //     }[]
     // }[] = [];
 
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(svg, "application/xml");
-
-    const errorNode = doc.querySelector("parsererror");
-    if (errorNode) {
-        console.log("error while parsing");
+    const bodies = useRef<b2Body[]>([]);
+    useEffect(() => positionBodies)
+    
+   
+    const positionBodies = () => {
+        const rng = new Prando(seed.current);
+        const cols = 6;
+        // console.log("positionBodies: "+seed.current)
+        const bodiesToRandomSort = [...bodies.current]
+        bodiesToRandomSort.sort((a, b) => a.GetUserData().index - b.GetUserData().index)
+        bodiesToRandomSort.sort(() => rng.next(-1, 1))
+        bodiesToRandomSort.forEach((body, i) => {
+            body.SetAwake(true);
+            body.SetTransformXY(WIDTH / 2 - 25 + ((i % cols) / cols) * 55, (HEIGHT * 2.4 - 22 * (Math.floor(i/cols) + 1)) * HUBSCALE / SCALE_FACTOR, 0)
+            body.ApplyTorque(20)
+            body.SetAngularVelocity(0)
+            body.SetLinearVelocity({ x: 0, y: 0 })
+            // if (i === 0) {
+            //     //body.GetTransform().SetPosition(new transformWIDTH / 2, (HEIGHT / 2 + 11 * (i + x)) / SCALE_FACTOR)
+            //     console.log(body.GetTransform().p.y)
+            // }
+        });
     }
 
-    const gravity: XY = { x: 0, y: 9 };
-    const m_world: b2World = b2World.Create(gravity);
-
-    const ground = m_world.CreateBody();
-    {
+    let faceGroups: Element[] = [];
+    let m_world: b2World;
+    let ground: b2Body
+    const parseSvg = () => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(svg, "application/xml");
+    
+        const errorNode = doc.querySelector("parsererror");
+        if (errorNode) {
+            console.log("error while parsing");
+        }
+    
+        const gravity: XY = { x: 0, y: 9 };
+        m_world = b2World.Create(gravity);
+        ground = m_world.CreateBody();
+        
         const offSetX = SHEET_WIDTH / -2 + WIDTH / 2;
         const offSetY = SHEET_HEIGHT / -2 + HEIGHT / 2;
         const shape = new b2EdgeShape();
@@ -104,33 +131,8 @@ function Box2DSim({ svg }: { svg: string }) {
             new b2Vec2(SHEET_WIDTH + offSetX, SHEET_HEIGHT + offSetY)
         );
         ground.CreateFixture({ shape });
-    }
+        
 
-    const bodies: b2Body[] = [];
-    useEffect(() => positionBodies)
-    const cols = 6;
-   
-    const positionBodies = () => {
-        const rng = new Prando(seed.current);
-        // console.log("positionBodies: "+seed.current)
-        const bodiesToRandomSort = [...bodies]
-        bodiesToRandomSort.sort((a, b) => a.GetUserData().index - b.GetUserData().index)
-        bodiesToRandomSort.sort(() => rng.next(-1, 1))
-        bodiesToRandomSort.forEach((body, i) => {
-            body.SetAwake(true);
-            body.SetTransformXY(WIDTH / 2 - 25 + ((i % cols) / cols) * 55, (HEIGHT * 2.4 - 22 * (Math.floor(i/cols) + 1)) * HUBSCALE / SCALE_FACTOR, 0)
-            body.ApplyTorque(20)
-            body.SetAngularVelocity(0)
-            body.SetLinearVelocity({ x: 0, y: 0 })
-            // if (i === 0) {
-            //     //body.GetTransform().SetPosition(new transformWIDTH / 2, (HEIGHT / 2 + 11 * (i + x)) / SCALE_FACTOR)
-            //     console.log(body.GetTransform().p.y)
-            // }
-        });
-    }
-
-    let faceGroups: Element[] = [];
-    const parseSvg = () => {
         faceGroups = Array.from(doc.documentElement.querySelectorAll("svg > g"));
         const hitBoxPathSummedLengths: number[] = [];
         faceGroups.forEach((faceGroup, i) => {
@@ -139,7 +141,7 @@ function Box2DSim({ svg }: { svg: string }) {
                 position: { x: 0, y: 0},
                 userData: {index: i},
             });
-            bodies.push(body);
+            bodies.current.push(body);
             hitBoxPathSummedLengths.push(0)
             // HITBOX PATHS
             const hitBoxPaths = faceGroup.querySelectorAll("g.hitboxes > path");
@@ -240,14 +242,14 @@ function Box2DSim({ svg }: { svg: string }) {
             console.log(`best seed: ${seed.current} height: ${maxHeight.current}`)
         }        
         seed.current = seed.current + 1;
-        // setSeedState(seed.current);
+        setSeedState(seed.current);
         positionBodies();
     }
 
     const onChangeSeedInput: React.ChangeEventHandler<HTMLInputElement> = (e) => {
         seed.current = +e.currentTarget.value;
         console.log(seed.current)
-        // setSeedState(seed.current);
+        setSeedState(seed.current);
         positionBodies();
     }
     // useEffect(() => {
@@ -284,7 +286,7 @@ function Box2DSim({ svg }: { svg: string }) {
 
         let maxY = 0
         let minY = 1000
-        bodies.forEach((body, i) => {
+        bodies.current.forEach((body, i) => {
             const fix = body.GetFixtureList()
             const lowerY = fix?.GetAABB(0).lowerBound.y || 0
             if (lowerY < minY) {
@@ -300,13 +302,13 @@ function Box2DSim({ svg }: { svg: string }) {
             //     console.log(lowerY, fix?.GetAABB(0).lowerBound.y)
             // }
         })
-        // console.log(minY, bodies[53].GetFixtureList()?.GetAABB(0).lowerBound.y)
+        // console.log(minY, bodies.current[53].GetFixtureList()?.GetAABB(0).lowerBound.y)
 
         maxHeight.current = 1000 - 16 - minY; // Math.round(minY)
 
         // const SVG_RENDER = false; // SVG_RENDER && 
-        if (bodies.some((body) => body.IsAwake())) {
-            faceTransforms.current = bodies.map((body) => {
+        if (bodies.current.some((body) => body.IsAwake())) {
+            faceTransforms.current = bodies.current.map((body) => {
                 const pos = body.GetPosition();
                 const angle = body.GetAngle();
                 return {
@@ -418,13 +420,12 @@ function Box2DSim({ svg }: { svg: string }) {
             <SVGOutput faceGroups={faceGroups} faceTransforms={faceTransforms.current} />
             <menu>
                 <p>{faceGroups.length} Parts</p>
-                <p>Seed: {seed.current}</p>
-                {/* <input type="text" onChange={onChangeSeedInput} value={seedState}></input> */}
+                <p>Seed: <input type="text" onChange={onChangeSeedInput} value={seedState}></input></p>                
                 <p>Max Height: {maxHeight.current}</p>
                 <button onClick={() => {
                     console.log("Pause!")
                     setPaused(!paused)
-                    bodies.forEach(body => {
+                    bodies.current.forEach(body => {
                         // console.log(body.IsAwake()) // This seems to contradict the pink/grey debg UI state?
                         body.SetAwake(false);
                         // console.log(body.IsAwake())
