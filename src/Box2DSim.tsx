@@ -14,12 +14,14 @@ import {
     b2PolygonShape,
     b2Vec2,
     b2World,
+    DrawAABBs,
     DrawJoints,
     DrawShapes,
     XY,
 } from "@box2d/core";
 import { DebugDraw } from "@box2d/debug-draw";
 import Stats from "stats.js";
+import Prando from "prando";
 
 
 const HUBSCALE = 1;
@@ -36,6 +38,7 @@ const HEIGHT = 1000;
 interface IPartTransform { x: Number; y: Number; rotation: number }
 
 function Box2DSim({ svg }: { svg: string }) {
+    console.log("Box2DSim")
     const debugCanvasRef = useRef<HTMLCanvasElement>(null);
     const m_debugDraw = useRef<DebugDraw>();
     const [paused, setPaused] = useState(false);
@@ -43,6 +46,18 @@ function Box2DSim({ svg }: { svg: string }) {
 
     const stats = new Stats();
     stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+    
+    // Specific number seed
+    const maxHeight = useRef(0); // Highest part's top edge (?) 
+    const maxHeightBest = useRef(1000);
+
+    /*
+    best seed: 346 height: 508.14192019493265
+    best seed: 522 height: 507.99502596668583
+    */
+    const seed = useRef(346)
+    const [seedState, setSeedState] = useState(seed.current)
+    
 
     // let faceGroups: NodeListOf<Element> | undefined = undefined
     // let faceGeoms: {
@@ -60,7 +75,7 @@ function Box2DSim({ svg }: { svg: string }) {
         console.log("error while parsing");
     }
 
-    const gravity: XY = { x: 0, y: 2 };
+    const gravity: XY = { x: 0, y: 9 };
     const m_world: b2World = b2World.Create(gravity);
 
     const ground = m_world.CreateBody();
@@ -93,25 +108,41 @@ function Box2DSim({ svg }: { svg: string }) {
 
     //const DEBUG_FACE_COUNT = 3;
     const bodies: b2Body[] = [];
+    useEffect(() => positionBodies)
     let x = 1;
     // const cols = 4; // 5 500
     const cols = 6; // 500
     //for (let x = 1; x < DEBUG_FACE_COUNT; x += faceGeoms.length) {
+    let rng = useRef(new Prando(seed.current));
+    
 
-    const faceGroups = doc.documentElement.querySelectorAll("svg > g");
-    console.log("Faces: "+faceGroups.length)
     const hitBoxPathSummedLengths: number[] = [];
-    Array.from(faceGroups).forEach((faceGroup, i) => {
+    
+    const positionBodies = () => {
+        rng.current = new Prando(seed.current);
+        // console.log("positionBodies: "+seed.current)
+        const bodiesToRandomSort = [...bodies]
+        bodiesToRandomSort.sort((a, b) => a.GetUserData().index - b.GetUserData().index)
+        bodiesToRandomSort.sort(() => rng.current.next(-1, 1))
+        bodiesToRandomSort.forEach((body, i) => {
+            body.SetAwake(true);
+            body.SetTransformXY(WIDTH / 2 - 25 + ((i % cols) / cols) * 55, (HEIGHT * 2.4 - 22 * (Math.floor(i/cols) + x)) * HUBSCALE / SCALE_FACTOR, 0)
+            body.ApplyTorque(20)
+            body.SetAngularVelocity(0)
+            body.SetLinearVelocity({ x: 0, y: 0 })
+            // if (i === 0) {
+            //     //body.GetTransform().SetPosition(new transformWIDTH / 2, (HEIGHT / 2 + 11 * (i + x)) / SCALE_FACTOR)
+            //     console.log(body.GetTransform().p.y)
+            // }
+        });
+    }
+
+    const faceGroups = Array.from(doc.documentElement.querySelectorAll("svg > g"));
+    faceGroups.forEach((faceGroup, i) => {
         const body = m_world.CreateBody({
             type: b2BodyType.b2_dynamicBody,
-            // position: { x: WIDTH / 2, y: (HEIGHT / 2 - 20 * (i + x)) * HUBSCALE / SCALE_FACTOR },
-            // position: { x: WIDTH / 2, y: (HEIGHT * 2 - 10 * (i + x)) * HUBSCALE / SCALE_FACTOR },
-            // position: { x: WIDTH / 2, y: (HEIGHT * 2 - 2 * (i + x)) * HUBSCALE / SCALE_FACTOR },
-            // position: { x: WIDTH / 2, y: (HEIGHT * 2 - 35 * (i + x)) * HUBSCALE / SCALE_FACTOR }, // single col
-
-            // Hubs grid
-            position: { x: WIDTH / 2 - 25 + ((i % cols) / cols) * 55, y: (HEIGHT * 2.4 - 22 * (Math.floor(i/cols) + x)) * HUBSCALE / SCALE_FACTOR },
-            // userData: m_indices[i],
+            position: { x: 0, y: 0},
+            userData: {index: i},
         });
         bodies.push(body);
         hitBoxPathSummedLengths.push(0)
@@ -199,35 +230,39 @@ function Box2DSim({ svg }: { svg: string }) {
         })
     });
 
-    const resetFaceGeomsPosition = () => {
-        bodies.forEach((body, i) => {
-            body.SetAwake(true);
-            body.SetTransformXY(WIDTH / 2, (HEIGHT / 2 + 11 * (i + x)) / SCALE_FACTOR, 0)
-            body.SetAngularVelocity(0)
-            body.SetLinearVelocity({ x: 0, y: 0 })
-            // console.log(body.GetTransform())
-        });
+    
+
+    const resetFaceGeomsPosition = () => {  
+        positionBodies();
+    }
+    
+    const bumpSeed = () => {
+        if (maxHeight.current < maxHeightBest.current) {
+            maxHeightBest.current = maxHeight.current;
+            console.log(`best seed: ${seed.current} height: ${maxHeight.current}`)
+        }        
+        seed.current = seed.current + 1;
+        // setSeedState(seed.current);
+        positionBodies();
     }
 
+    const onChangeSeedInput: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+        seed.current = +e.currentTarget.value;
+        console.log(seed.current)
+        // setSeedState(seed.current);
+        positionBodies();
+    }
+    useEffect(() => {
+        const interval = setInterval(() => {
+            bumpSeed()
+        }, 30000)
+        return () => clearInterval(interval)
+    }, [])
+    
 
     // LOOP
-    const [maxHeightOffset, setMaxHeightOffset] = useState(0); // Highest part's top edge (?) 
     const loop = () => {
         stats.begin();
-
-        let maxY = 0
-        bodies.forEach((body, i) => {
-            const fix = body.GetFixtureList()
-            const upperY = 1000 - 16 - (fix?.GetAABB(0).upperBound.y || 0)
-            if (upperY && maxY < upperY) {
-                maxY = upperY
-            }  
-        })
-
-        //if (Math.round(minY) > Math.round(maxHeightOffset)) {
-            setMaxHeightOffset(Math.round(maxY))
-        //}
-
         const m_ctx = debugCanvasRef.current?.getContext("2d");
         if (m_ctx) {
             m_ctx.clearRect(0, 0, m_ctx.canvas.width, m_ctx.canvas.height);
@@ -246,8 +281,31 @@ function Box2DSim({ svg }: { svg: string }) {
         if (draw) {
             DrawShapes(draw, m_world);
             DrawJoints(draw, m_world);
-            // DrawAABBs(draw, m_world);
+            DrawAABBs(draw, m_world);
         }
+
+        let maxY = 0
+        let minY = 1000
+        bodies.forEach((body, i) => {
+            const fix = body.GetFixtureList()
+            const lowerY = fix?.GetAABB(0).lowerBound.y || 0
+            if (lowerY < minY) {
+                minY = lowerY;
+            }
+
+            const upperY = 1000 - 16 - (fix?.GetAABB(0).lowerBound.y || 0)
+            if (upperY && maxY < upperY) {
+                maxY = upperY
+                
+            }
+            // if (i === 53) {
+            //     console.log(lowerY, fix?.GetAABB(0).lowerBound.y)
+            // }
+        })
+        // console.log(minY, bodies[53].GetFixtureList()?.GetAABB(0).lowerBound.y)
+
+        maxHeight.current = 1000 - 16 - minY; // Math.round(minY)
+
         // const SVG_RENDER = false; // SVG_RENDER && 
         if (bodies.some((body) => body.IsAwake())) {
             faceTransforms.current = bodies.map((body) => {
@@ -312,6 +370,7 @@ function Box2DSim({ svg }: { svg: string }) {
                     const inside = fixture.TestPoint(p);
                     if (inside) {
                         hit_fixture = fixture;
+                        console.log(body.GetUserData())
                         return false; // We are done, terminate the query.
                     }
                 }
@@ -353,14 +412,15 @@ function Box2DSim({ svg }: { svg: string }) {
         }
     };
 
-    console.log("render Box2DSim");
     return (
         <div className="App">
             <canvas ref={debugCanvasRef} width="1000" height={1000} />
             <SVGOutput faceGroups={faceGroups} faceTransforms={faceTransforms.current} />
             <menu>
                 <p>{faceGroups.length} Parts</p>
-                <p>Max Height: {maxHeightOffset}</p>
+                <p>Seed: {seed.current}</p>
+                {/* <input type="text" onChange={onChangeSeedInput} value={seedState}></input> */}
+                <p>Max Height: {maxHeight.current}</p>
                 <button onClick={() => {
                     console.log("Pause!")
                     setPaused(!paused)
@@ -383,21 +443,25 @@ function Box2DSim({ svg }: { svg: string }) {
                 }}>Download SVG</button>
                 <br />
                 <button onClick={() => {
+                    console.log("restart")
                     resetFaceGeomsPosition()
                 }}>Restart Simulation</button>
+                <button onClick={() => {
+                    bumpSeed()
+                }}>Bump Seed</button>
             </menu>
         </div>
     );
 }
 
-const SVGOutput = ({ faceGroups, faceTransforms }: { faceGroups?: NodeListOf<Element>, faceTransforms: IPartTransform[] }) => (
+const SVGOutput = ({ faceGroups, faceTransforms }: { faceGroups?: Array<Element>, faceTransforms: IPartTransform[] }) => (
     <svg
         width="1000mm"
         height="1000mm"
         viewBox="0 0 1000 1000"
         xmlns="http://www.w3.org/2000/svg"
     >
-        {Array.from(faceGroups || []).map((faceGroup, i) => {
+        {(faceGroups || []).map((faceGroup, i) => {
             const transform = faceTransforms[i];
 
             // const rects = Array.from(faceGroup.querySelectorAll("> rect"));

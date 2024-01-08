@@ -13,7 +13,7 @@ function App() {
       .then((response) => response.text())
       .then((textContent) => {
         setSvgSource(textContent)
-        console.log(textContent)
+        // console.log(textContent)
       });
   })
 
