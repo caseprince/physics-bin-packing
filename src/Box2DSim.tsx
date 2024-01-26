@@ -493,11 +493,13 @@ const SVGOutput = ({ faceGroups, faceTransforms }: { faceGroups?: Array<Element>
             // path.setAttribute("d", unifiedPathD)
             // const children = [...paths, ...rects] // Filters out g.hitboxes
 
-            Array.from(faceGroup.querySelectorAll("g"));
+            const textElements = faceGroup.querySelectorAll("text");
+            // Pad labels with left & right spaces to enable simple DOM searching for complete numbers with devtools:
+            const dataLabels = Array.from(textElements).map(element => ` ${element.textContent} `).join(",")
             return (
                 <g
-
                     key={`face${i}`}
+                    data-labels={dataLabels}
                     stroke="blue"
                     strokeWidth={0.3}
                     fill="none"
