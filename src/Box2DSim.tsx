@@ -494,8 +494,8 @@ const SVGOutput = ({ faceGroups, faceTransforms }: { faceGroups?: Array<Element>
             // const children = [...paths, ...rects] // Filters out g.hitboxes
 
             const textElements = faceGroup.querySelectorAll("text");
-            // Pad labels with left & right spaces to enable simple DOM searching for complete numbers with devtools:
-            const dataLabels = Array.from(textElements).map(element => ` ${element.textContent} `).join(",")
+            // Pad labels with left & right ~ to enable simple DOM searching for complete numbers with devtools:
+            const dataLabels = Array.from(textElements).map(element => `~${element.textContent}~`).join(",")
             return (
                 <g
                     key={`face${i}`}
@@ -533,7 +533,7 @@ function rotateAroundOrigin(x: number, y: number, radians: number) {
 
 const saveSVG = async (blob: Blob) => {
     const a = document.createElement('a');
-    a.download = 'output.svg';
+    a.download = 'output.svg'; // TODO: Match input SVG name
     a.href = URL.createObjectURL(blob);
     a.addEventListener('click', (e) => {
         setTimeout(() => URL.revokeObjectURL(a.href), 30 * 1000);
