@@ -12,6 +12,7 @@ import {
     b2MouseJoint,
     b2MouseJointDef,
     b2PolygonShape,
+    b2Shape,
     b2Vec2,
     b2World,
     DrawAABBs,
@@ -70,7 +71,6 @@ function Box2DSim({ svg }: { svg: string }) {
     const bodies = useRef<b2Body[]>([]);
     useEffect(() => positionBodies)
     
-   
     const positionBodies = () => {
         const rng = new Prando(seed.current);
         const cols = 6;
@@ -131,7 +131,16 @@ function Box2DSim({ svg }: { svg: string }) {
             new b2Vec2(SHEET_WIDTH + offSetX, SHEET_HEIGHT + offSetY)
         );
         ground.CreateFixture({ shape });
-        
+
+        const smashBody = m_world.CreateBody();
+        const smashShape = new b2PolygonShape();
+        smashShape.SetAsBox(SHEET_WIDTH, 100, {x: WIDTH / 2, y: HEIGHT / 20})
+        const smashFix: b2FixtureDef = {
+            shape: smashShape,
+            density: 10.12,
+            friction: 0.0055,
+        };
+        smashBody.CreateFixture(smashFix);
 
         faceGroups = Array.from(doc.documentElement.querySelectorAll("svg > g"));
         const hitBoxPathSummedLengths: number[] = [];
@@ -227,10 +236,6 @@ function Box2DSim({ svg }: { svg: string }) {
             })
         });
     }
-
-    
-
-    
 
     const resetFaceGeomsPosition = () => {  
         positionBodies();
