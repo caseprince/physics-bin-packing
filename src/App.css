@@ -5,12 +5,12 @@ body {
 
 .App {
   position: relative;
-  background-color: #282c34;
+  
 }
 
 canvas {
-  position: absolute;
   border: 1px solid cadetblue;
+  background-color: #282c34;
 }
 
 svg {
@@ -20,6 +20,14 @@ svg {
 
 menu {
   position: absolute;
-  top: 180px;
+  top: 50px;
   padding: 20px;
+}
+menu.sim-menu {
+  top: auto;
+  bottom: 70px;
+}
+
+input {
+  width: 50px;
 }
