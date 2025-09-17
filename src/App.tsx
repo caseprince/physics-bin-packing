@@ -15,6 +15,7 @@ function App() {
   >([]);
   const [binHeight, setBinHeight] = useState(0);
   const [timerProgress, setTimerProgress] = useState(0);
+  const [timerResetKey, setTimerResetKey] = useState(0);
   const binHeightRef = useRef(binHeight);
 
   useEffect(() => {
@@ -34,8 +35,9 @@ function App() {
   }, []);
 
   const onChangeSeedInput: React.ChangeEventHandler<HTMLInputElement> = (e) => {
-    console.log(+e.currentTarget.value);
     setSeed(+e.currentTarget.value);
+    // Reset the running bump/progress timers when the user manually changes seed.
+    setTimerResetKey((k) => k + 1);
   };
 
   useEffect(() => {
@@ -68,7 +70,7 @@ function App() {
       // Replace the worst if current is better (smaller binHeight),
       // excluding duplicates (same seed and binHeight).
       if (
-        binHeight < maxVal &&
+        entry.binHeight < maxVal &&
         !prev.some(
           (e) => e.seed === entry.seed && e.binHeight === entry.binHeight
         )
@@ -81,6 +83,7 @@ function App() {
     });
 
     setSeed((s) => s + 1);
+    setTimerResetKey((k) => k + 1);
   };
 
   // Manage bump interval and a progress timer for the pie UI.
@@ -115,7 +118,7 @@ function App() {
       setTimerProgress(0);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoBumpSeed]);
+  }, [autoBumpSeed, timerResetKey]);
 
   if (!svg) {
     return <div>loading...</div>;
@@ -134,7 +137,7 @@ function App() {
     <div className="App">
       <Box2DSim svg={svg} seed={seed} reportBinHeight={setBinHeight} />
       <menu>
-        <p>{partCount} Parts!</p>
+        <p>{partCount} Bodies!</p>
         <p>
           Seed:{" "}
           <input type="text" onChange={onChangeSeedInput} value={seed}></input>
@@ -154,6 +157,8 @@ function App() {
             onChange={(e) => {
               if (e.currentTarget.checked) {
                 bumpSeed();
+                // reset timers when checkbox triggers an immediate bump
+                setTimerResetKey((k) => k + 1);
               }
               setAutoBumpSeed(e.currentTarget.checked);
             }}
@@ -166,7 +171,7 @@ function App() {
                  a 15.9155 15.9155 0 0 1 0 31.831
                  a 15.9155 15.9155 0 0 1 0 -31.831"
               fill="none"
-              stroke="#eee"
+              stroke="#000000"
               strokeWidth="4"
             />
             <path

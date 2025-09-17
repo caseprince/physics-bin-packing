@@ -77,22 +77,18 @@ const Box2DSim = memo(
           document.body.appendChild(statsRef.current.dom);
         }
 
-        debugCanvas.addEventListener("mousedown", (e) => handleMouseDown(e));
-        debugCanvas.addEventListener("mouseup", (e) => handleMouseUp(e));
-        debugCanvas.addEventListener("mousemove", (e) => handleMouseMove(e));
+        debugCanvas.addEventListener("mousedown", handleMouseDown);
+        debugCanvas.addEventListener("mouseup", handleMouseUp);
+        debugCanvas.addEventListener("mousemove", handleMouseMove);
 
         animationFrameLoop.current = window.requestAnimationFrame(loop);
       }
       return () => {
         debugDrawRef.current?.Finish();
 
-        debugCanvas?.removeEventListener("mousedown", (e) =>
-          handleMouseDown(e)
-        );
-        debugCanvas?.removeEventListener("mouseup", (e) => handleMouseUp(e));
-        debugCanvas?.removeEventListener("mousemove", (e) =>
-          handleMouseMove(e)
-        );
+        debugCanvas?.removeEventListener("mousedown", handleMouseDown);
+        debugCanvas?.removeEventListener("mouseup", handleMouseUp);
+        debugCanvas?.removeEventListener("mousemove", handleMouseMove);
 
         window.cancelAnimationFrame(animationFrameLoop.current);
       };
@@ -368,7 +364,6 @@ const Box2DSim = memo(
             const inside = fixture.TestPoint(p);
             if (inside) {
               hit_fixture = fixture;
-              console.log(body.GetUserData());
               return false; // We are done, terminate the query.
             }
           }
@@ -380,6 +375,7 @@ const Box2DSim = memo(
           const dampingRatio = 0.7;
 
           const body = hit_fixture.GetBody();
+          console.log(`Dragging Body index: ${body.GetUserData().index}`);
           const md = new b2MouseJointDef();
           md.bodyA = ground;
           md.bodyB = body;
