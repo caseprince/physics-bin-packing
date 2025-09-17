@@ -13,10 +13,10 @@ canvas {
   background-color: #282c34;
 }
 
-svg {
+/* svg {
   position: absolute;
   pointer-events: none;
-}
+} */
 
 menu {
   position: absolute;
@@ -28,6 +28,10 @@ menu.sim-menu {
   bottom: 70px;
 }
 
-input {
+input[type="text"] {
   width: 50px;
+}
+
+table tr:hover {
+  background-color: #333;
 }
