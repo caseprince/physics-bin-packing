@@ -8,15 +8,17 @@ import svgFile from "./svg/cat_faces.svg";
 function App() {
   const [svg, setSvg] = useState<SVGElement | null>(null);
   const [seed, setSeed] = useState(1);
+  const [sheetWidth, setSheetWidth] = useState<number>(384);
+  const [sheetHeight, setSheetHeight] = useState<number>(790);
   const seedRef = useRef(seed);
   const [autoBumpSeed, setAutoBumpSeed] = useState(true);
   const [bestSeeds, setBestSeeds] = useState<
-    Array<{ seed: number; binHeight: number }>
+    Array<{ seed: number; packHeight: number }>
   >([]);
-  const [binHeight, setBinHeight] = useState(0);
+  const [packHeight, setPackHeight] = useState(0);
   const [timerProgress, setTimerProgress] = useState(0);
   const [timerResetKey, setTimerResetKey] = useState(0);
-  const binHeightRef = useRef(binHeight);
+  const packHeightRef = useRef(packHeight);
 
   useEffect(() => {
     fetch(svgFile)
@@ -44,40 +46,43 @@ function App() {
     seedRef.current = seed;
   }, [seed]);
   useEffect(() => {
-    binHeightRef.current = binHeight;
-  }, [binHeight]);
+    packHeightRef.current = packHeight;
+  }, [packHeight]);
 
   const bumpSeed = () => {
-    // Before bumping, record the current seed/binHeight into bestSeeds.
+    // Before bumping, record the current seed/packHeight into bestSeeds.
     setBestSeeds((prev) => {
-      const entry = { seed: seedRef.current, binHeight: binHeightRef.current };
+      const entry = {
+        seed: seedRef.current,
+        packHeight: packHeightRef.current,
+      };
       console.log(entry);
       // If we have fewer than 5 entries, just add it.
       if (prev.length < 10) {
-        return [...prev, entry].sort((a, b) => a.binHeight - b.binHeight);
+        return [...prev, entry].sort((a, b) => a.packHeight - b.packHeight);
       }
-      // Otherwise, find the entry with the highest binHeight (worst) and replace it
-      // only if the current binHeight is less than that (better is lower binHeight).
+      // Otherwise, find the entry with the highest packHeight (worst) and replace it
+      // only if the current packHeight is less than that (better is lower packHeight).
       let maxIdx = 0;
-      let maxVal = prev[0].binHeight;
+      let maxVal = prev[0].packHeight;
       for (let i = 1; i < prev.length; i++) {
-        if (prev[i].binHeight > maxVal) {
-          maxVal = prev[i].binHeight;
+        if (prev[i].packHeight > maxVal) {
+          maxVal = prev[i].packHeight;
           maxIdx = i;
         }
       }
       console.log("maxIdx, maxVal: " + maxIdx + ", " + maxVal);
-      // Replace the worst if current is better (smaller binHeight),
-      // excluding duplicates (same seed and binHeight).
+      // Replace the worst if current is better (smaller packHeight),
+      // excluding duplicates (same seed and packHeight).
       if (
-        entry.binHeight < maxVal &&
+        entry.packHeight < maxVal &&
         !prev.some(
-          (e) => e.seed === entry.seed && e.binHeight === entry.binHeight
+          (e) => e.seed === entry.seed && e.packHeight === entry.packHeight
         )
       ) {
         const copy = prev.slice();
         copy[maxIdx] = entry;
-        return copy.sort((a, b) => a.binHeight - b.binHeight);
+        return copy.sort((a, b) => a.packHeight - b.packHeight);
       }
       return prev;
     });
@@ -135,8 +140,34 @@ function App() {
 
   return (
     <div className="App">
-      <Box2DSim svg={svg} seed={seed} reportBinHeight={setBinHeight} />
+      <Box2DSim
+        svg={svg}
+        seed={seed}
+        reportPackHeight={setPackHeight}
+        sheetWidth={sheetWidth}
+        sheetHeight={sheetHeight}
+      />
       <menu>
+        <div style={{ marginBottom: 8 }}>
+          <label style={{ marginRight: 12 }}>
+            Sheet Width (mm):
+            <input
+              type="number"
+              value={sheetWidth}
+              onChange={(e) => setSheetWidth(+e.currentTarget.value)}
+              style={{ width: 80, marginLeft: 8 }}
+            />
+          </label>
+          <label>
+            Sheet Height (mm):
+            <input
+              type="number"
+              value={sheetHeight}
+              onChange={(e) => setSheetHeight(+e.currentTarget.value)}
+              style={{ width: 80, marginLeft: 8 }}
+            />
+          </label>
+        </div>
         <p>{partCount} Bodies!</p>
         <p>
           Seed:{" "}
@@ -189,7 +220,7 @@ function App() {
           </svg>
         </label>
         {/* When autoBumpSeed is true, an interval will bump the seed every 5 seconds. */}
-        <p>{`Bin Height: ${binHeight.toFixed(1)}`}</p>
+        <p>{`Pack Height: ${packHeight.toFixed(1)}mm`}</p>
         <div style={{ marginTop: 12 }}>
           <h4 style={{ margin: "6px 0" }}>Best Seeds</h4>
           {bestSeeds.length === 0 ? (
@@ -216,7 +247,9 @@ function App() {
                     }}
                   >
                     <td style={{ padding: 6 }}>{bs.seed}</td>
-                    <td style={{ padding: 6 }}>{bs.binHeight.toFixed(1)}</td>
+                    <td style={{ padding: 6 }}>{`${bs.packHeight.toFixed(
+                      1
+                    )}mm`}</td>
                   </tr>
                 ))}
               </tbody>

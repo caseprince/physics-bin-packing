@@ -28,6 +28,10 @@ menu.sim-menu {
   bottom: 70px;
 }
 
+label {
+  display: block;
+}
+
 input[type="text"] {
   width: 50px;
 }

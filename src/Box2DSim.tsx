@@ -23,10 +23,6 @@ import Prando from "prando";
 
 const HUBSCALE = 1;
 const SCALE_FACTOR = 4; // Controls scale of units in physics world. Box2D is optimized for a certain scale.
-// Bigger is "smaller" and more performant than using mm units directly.
-let SHEET_WIDTH = 384 / SCALE_FACTOR; // / 2;
-let SHEET_HEIGHT = 790 / SCALE_FACTOR;
-
 const WIDTH = 1000;
 const HEIGHT = 1000;
 
@@ -40,11 +36,15 @@ const Box2DSim = memo(
   ({
     svg,
     seed,
-    reportBinHeight,
+    reportPackHeight,
+    sheetWidth,
+    sheetHeight,
   }: {
     svg: SVGElement;
     seed: number;
-    reportBinHeight: (height: number) => void;
+    reportPackHeight: (height: number) => void;
+    sheetWidth: number;
+    sheetHeight: number;
   }) => {
     console.log("Render Box2DSim");
     const debugCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -52,6 +52,7 @@ const Box2DSim = memo(
     const statsRef = useRef<Stats | null>(null);
     const faceTransforms = useRef<IPartTransform[]>([]);
     let animationFrameLoop = useRef(0);
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
     useEffect(() => {
       const debugCanvas = debugCanvasRef.current;
       if (debugCanvas) {
@@ -92,7 +93,7 @@ const Box2DSim = memo(
 
         window.cancelAnimationFrame(animationFrameLoop.current);
       };
-    }, [seed]);
+    }, [seed, sheetWidth, sheetHeight]);
 
     let bodies: b2Body[] = []; // useRef<b2Body[]>([]);
 
@@ -137,34 +138,38 @@ const Box2DSim = memo(
 
       // m_world.ClearForces(); // Resetting to be triggered by parent?
 
-      const offSetX = SHEET_WIDTH / -2 + WIDTH / 2;
-      const offSetY = SHEET_HEIGHT / -2 + HEIGHT / 2;
+      // compute sheet sizes (convert mm to physics units)
+      const sheetW = sheetWidth / SCALE_FACTOR;
+      const sheetH = sheetHeight / SCALE_FACTOR;
+
+      const offSetX = sheetW / -2 + WIDTH / 2;
+      const offSetY = sheetH / -2 + HEIGHT / 2;
       const shape = new b2EdgeShape();
 
       // left bin wall
       shape.SetTwoSided(
         new b2Vec2(offSetX, offSetY),
-        new b2Vec2(offSetX, SHEET_HEIGHT + offSetY)
+        new b2Vec2(offSetX, sheetH + offSetY)
       );
       ground.CreateFixture({ shape });
 
       // right bin wall
       shape.SetTwoSided(
-        new b2Vec2(SHEET_WIDTH + offSetX, offSetY),
-        new b2Vec2(SHEET_WIDTH + offSetX, SHEET_HEIGHT + offSetY)
+        new b2Vec2(sheetW + offSetX, offSetY),
+        new b2Vec2(sheetW + offSetX, sheetH + offSetY)
       );
       ground.CreateFixture({ shape });
 
       // bottom bin floor
       shape.SetTwoSided(
-        new b2Vec2(offSetX, SHEET_HEIGHT + offSetY),
-        new b2Vec2(SHEET_WIDTH + offSetX, SHEET_HEIGHT + offSetY)
+        new b2Vec2(offSetX, sheetH + offSetY),
+        new b2Vec2(sheetW + offSetX, sheetH + offSetY)
       );
       ground.CreateFixture({ shape });
 
       const smashBody = m_world.CreateBody();
       const smashShape = new b2PolygonShape();
-      smashShape.SetAsBox(SHEET_WIDTH, 100, { x: WIDTH / 2, y: HEIGHT / 20 });
+      smashShape.SetAsBox(sheetW, 100, { x: WIDTH / 2, y: HEIGHT / 20 });
       const smashFix: b2FixtureDef = {
         shape: smashShape,
         density: 10.12,
@@ -320,7 +325,7 @@ const Box2DSim = memo(
         //   }
       });
 
-      reportBinHeight(1000 - minY);
+      reportPackHeight(1000 - minY);
 
       if (bodies.some((body) => body.IsAwake())) {
         faceTransforms.current = bodies.map((body) => {
