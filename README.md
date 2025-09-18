@@ -1,46 +1,52 @@
-# Getting Started with Create React App
+# Physics Bin Packing
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This is a tool to optimize polygonal part packing on a single 2d sheet using physics simulation.
 
-## Available Scripts
+The [bin packing problem](https://en.wikipedia.org/wiki/Packing_problems) is a class of optimization problems in mathematics known to be computationally difficult ([NP-Complete](https://en.wikipedia.org/wiki/NP-completeness)). There are commercial and open-source applications and CAD package plugins which seem to mostly use heuristic approximation algorithms. A physics engine seemed like it could be a fun alternative to experiment with. We're using a typescript port of the popular Box2D engine: [box2d.ts](https://github.com/lusito/box2d.ts).
 
-In the project directory, you can run:
+## Setup
 
-### `npm start`
+Install node `22.10.0`. In the project directory, run:
 
-Runs the app in the development mode.\
+### `npm install` & `npm start`
+
+This runs the app in the development mode.\
 Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+The page will reload if you make edits.
 
-### `npm test`
+## Origin
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+This tool was developed as part of the workflow for a series of lazer-cut sculptures, but could probably be used for any 2d CNC process.
 
-### `npm run build`
+## Usage
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- Initial part placement is random and deterministic based on a seed. By default it will automatically cycle through seeds recording those with the best packing density. There's not a huge about of variation in overall density, but it's fun to watch!
+- Input is SVG (currently hardcoded).
+- Parts are defined as top level group nodes.
+- Actual part geometry does not need to be purely polygonal. It can include curves, interior details, text, etc.
+-  A simplified shape must be provided for physics simulation. This is defined by a SVG group with class `hitboxes` that contains polygonal `<path>` or `rect` nodes.
+- `hitbox` polygons should have 7 or fewer control points.
+- More complex or concave shapes can be achieved by combining multiple convex nodes within the `hitboxes` group.
+- `hitboxes` groups will be excluded from output. All other nodes and properties will be retained. Parts will be positioned on sheet with an added `transform` property, so input nodes should *not* include this property.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Simplified Example:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Input:
+```xml
+<g fill="none" stroke="blue" stroke-width="0.3">
+    <path d="M 26.48 -33.58 L 2.89 -86.60 Q 2.68 -87.08 2.17 -86.97 Q 1.67 -86.86 1.67 -86.35 L ..." />
+    <g class="hitboxes">
+        <path d="M 27.99 -30.79 L 1.42 -90.52 L 1.42 -2.55 L 27.99 -30.79" />
+    </g>
+</g>
+```
 
-### `npm run eject`
+Output:
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+```xml
+<g fill="none" stroke="blue" stroke-width="0.3"
+    transform="translate(409.72910872945386, 896.3707300965011) rotate(-89.99841816436704)">
+    <path d="M 26.48 -33.58 L 2.89 -86.60 Q 2.68 -87.08 2.17 -86.97 Q 1.67 -86.86 1.67 -86.35 L ..." />
+</g>
+```

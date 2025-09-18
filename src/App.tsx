@@ -168,7 +168,7 @@ function App() {
             />
           </label>
         </div>
-        <p>{partCount} Bodies!</p>
+        <p>{partCount} Parts!</p>
         <p>
           Seed:{" "}
           <input type="text" onChange={onChangeSeedInput} value={seed}></input>

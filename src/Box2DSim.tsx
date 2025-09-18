@@ -216,7 +216,7 @@ const Box2DSim = memo(
           }
           if (polygonPoints.length > 7) {
             console.warn(
-              "Warning! Hitzones with more than 7 control points will be truncated!"
+              "Warning! Hitboxes with more than 7 control points will be truncated!"
             );
           }
 
