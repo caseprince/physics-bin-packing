@@ -1,34 +1,40 @@
 # Physics Bin Packing
 
-This is a tool to optimize polygonal part packing on a single 2d sheet using physics simulation.
+This tool helps optimize polygonal part packing on a single 2D sheet using a physics simulation.
 
-The [bin packing problem](https://en.wikipedia.org/wiki/Packing_problems) is a class of optimization problems in mathematics known to be computationally difficult ([NP-Complete](https://en.wikipedia.org/wiki/NP-completeness)). There are commercial and open-source applications and CAD package plugins which seem to mostly use heuristic approximation algorithms. A physics engine seemed like it could be a fun alternative to experiment with. We're using a typescript port of the popular Box2D engine: [box2d.ts](https://github.com/lusito/box2d.ts).
+The [bin packing problem](https://en.wikipedia.org/wiki/Packing_problems) is a class of optimization problems that is computationally difficult ([NP-complete](https://en.wikipedia.org/wiki/NP-completeness)). Commercial and open-source applications, including CAD-package plugins, mostly use heuristic approximation algorithms. Using a physics engine is an interesting alternative to explore. This project uses a TypeScript port of the Box2D engine: [box2d.ts](https://github.com/lusito/box2d.ts).
 
 ## Setup
 
-Install node `22.10.0`. In the project directory, run:
+Install Node.js version 22.10.0 (or a compatible LTS release). In the project directory, run:
 
-### `npm install` & `npm start`
+### `npm install` && `npm start`
 
-This runs the app in the development mode.\
+This starts the app in development mode.
 Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
-The page will reload if you make edits.
+The page will reload automatically when you make edits.
 
 ## Usage
 
-- Initial part placement is random and deterministic based on a seed. By default it will automatically cycle through seeds recording those with the best packing density. There's not a huge about of variation in overall density, but it's fun to watch!
-- Input is SVG (currently hardcoded).
-- Parts are defined as top level group nodes.
-- Actual part geometry does not need to be purely polygonal. It can include curves, interior details, text, etc.
--  A simplified shape must be provided for physics simulation. This is defined by a SVG group with class `hitboxes` that contains polygonal `<path>` or `rect` nodes.
-- `hitbox` polygons should have 7 or fewer control points.
+- Initial part placement is random but deterministic based on a seed. By default, the app can automatically cycle through seeds and record those with the best packing density. There's not a huge amount of variation in overall density between seeds, but it's fun to watch!
+- Input is an SVG file (currently hardcoded).
+- Parts are defined as top-level `<g>` group nodes.
+- Part geometry does not need to be purely polygonal. It can include curves, interior details, text, and so on.
+- A simplified shape must be provided for the physics simulation. This is defined by an SVG group with class `hitboxes` that contains polygonal `<path>` or `<rect>` elements.
+- Hitbox polygons should have seven or fewer control points.
 - More complex or concave shapes can be achieved by combining multiple convex nodes within the `hitboxes` group.
-- `hitboxes` groups will be excluded from output. All other nodes and properties will be retained. Parts will be positioned on sheet with an added `transform` property, so input nodes should *not* include this property.
+- `hitboxes` groups will be excluded from the output. All other nodes and properties are retained. Parts will be positioned on the sheet with an added `transform` property, so input nodes should not already include this property.
 
-### Simplified Example:
+### Example SVG Part Geometry
+
+![Example SVG Part Geometry](images/hub-example.svg?raw=true "Example SVG Part Geometry")
+*Tool paths are shown in blue and green. Physics `hitboxes` are shown in red.*
+
+### Simplified Example of Input & Output
 
 Input:
+
 ```xml
 <g fill="none" stroke="blue" stroke-width="0.3">
     <path d="M 26.48 -33.58 L 2.89 -86.60 Q 2.68 -87.08 2.17 -86.97 Q 1.67 -86.86 1.67 -86.35 L ..." />
@@ -49,4 +55,6 @@ Output:
 
 ## Origin
 
-This tool was developed as part of the workflow for a series of lazer-cut sculptures, but could probably be used for any 2d CNC process.
+This tool was developed as part of the workflow for a series of laser-cut sculptures, but could be used for any 2D CNC process.
+
+![Wireframe alongside laser cut acrylic cat sculpture](images/laser-cat.jpg?raw=true "Wireframe alongside laser cut acrylic cat sculpture")
