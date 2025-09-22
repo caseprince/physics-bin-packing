@@ -432,6 +432,7 @@ const Box2DSim = memo(
           {paused ? "Resume Simulation" : "Pause Simulation"}
         </button>
         <br /> */}
+          <p><em>Click and drag parts for fun! ↝</em></p>
           <button
             onClick={() => {
               const svgString = renderToString(
