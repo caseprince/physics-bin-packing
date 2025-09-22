@@ -4,6 +4,9 @@ This tool helps optimize polygonal part packing on a single 2D sheet using a phy
 
 The [bin packing problem](https://en.wikipedia.org/wiki/Packing_problems) is a class of optimization problems that is computationally difficult ([NP-complete](https://en.wikipedia.org/wiki/NP-completeness)). Commercial and open-source applications, including CAD-package plugins, mostly use heuristic approximation algorithms. Using a physics engine is an interesting alternative to explore. This project uses a TypeScript port of the Box2D engine: [box2d.ts](https://github.com/lusito/box2d.ts).
 
+[<img src="images/screenshot.png" alt="Screenhot of physics simulation" width="500">](https://caseprince.github.io/physics-bin-packing/)\
+*View project live at [https://caseprince.github.io/physics-bin-packing/](https://caseprince.github.io/physics-bin-packing/).*
+
 ## Setup
 
 Install Node.js version 22.10.0 (or a compatible LTS release). In the project directory, run:
