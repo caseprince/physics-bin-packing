@@ -246,7 +246,6 @@ function App() {
             />
           </svg>
         </label>
-        {/* When autoBumpSeed is true, an interval will bump the seed every 5 seconds. */}
         <p>{`Pack Height: ${packHeight.toFixed(1)}mm`}</p>
         <div style={{ marginTop: 12 }}>
           <h4 style={{ margin: "6px 0" }}>Best Seeds</h4>
@@ -257,7 +256,7 @@ function App() {
               <thead>
                 <tr>
                   <th style={{ textAlign: "left", padding: 4 }}>Seed</th>
-                  <th style={{ textAlign: "left", padding: 4 }}>Bin Height</th>
+                  <th style={{ textAlign: "left", padding: 4 }}>Pack Height</th>
                 </tr>
               </thead>
               <tbody>
