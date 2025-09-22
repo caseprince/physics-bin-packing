@@ -1,15 +1,25 @@
 import { useEffect, useRef, useState } from "react";
 import "./App.css";
 import Box2DSim from "./Box2DSim";
-// import svgFile from "./svg/cat_hubs.svg";
-import svgFile from "./svg/cat_faces.svg";
-// import svgFile from "./svg/cat_faces2.svg";
+import catHubs from "./svg/cat_hubs.svg";
+import catFaces from "./svg/cat_faces.svg";
+
+const svgOptions = [
+  {
+    label: "cat_faces",
+    svgSource: catFaces,
+    sheetWidth: 384,
+    sheetHeight: 790,
+  },
+  { label: "cat_hubs", svgSource: catHubs, sheetWidth: 250, sheetHeight: 790 },
+];
 
 function App() {
   const [svg, setSvg] = useState<SVGElement | null>(null);
   const [seed, setSeed] = useState(1);
   const [sheetWidth, setSheetWidth] = useState<number>(384);
   const [sheetHeight, setSheetHeight] = useState<number>(790);
+  const [selectedSvgIndex, setSelectedSvgIndex] = useState(0);
   const seedRef = useRef(seed);
   const [autoBumpSeed, setAutoBumpSeed] = useState(true);
   const [bestSeeds, setBestSeeds] = useState<
@@ -21,20 +31,23 @@ function App() {
   const packHeightRef = useRef(packHeight);
 
   useEffect(() => {
-    fetch(svgFile)
+    // Load the currently selected svg option
+    const src = svgOptions[selectedSvgIndex].svgSource;
+    setSvg(null);
+    fetch(src)
       .then((response) => response.text())
       .then((fileContent) => {
         const parser = new DOMParser();
         const doc = parser.parseFromString(fileContent, "application/xml");
-        const svg = doc.getElementsByTagName("svg")[0];
-        setSvg(svg);
+        const svgEl = doc.getElementsByTagName("svg")[0];
+        setSvg(svgEl);
 
         const errorNode = doc.querySelector("parsererror");
         if (errorNode) {
           console.log("error while parsing");
         }
       });
-  }, []);
+  }, [selectedSvgIndex]);
 
   const onChangeSeedInput: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     setSeed(+e.currentTarget.value);
@@ -102,7 +115,7 @@ function App() {
     let start = Date.now();
     setTimerProgress(1);
 
-    // progress tick updates UI more frequently
+    // Progress tick updates UI more frequently
     const tickMs = 100;
     const progressId = setInterval(() => {
       const elapsed = Date.now() - start;
@@ -110,7 +123,7 @@ function App() {
       setTimerProgress(frac);
     }, tickMs);
 
-    // bump interval: call bumpSeed and reset progress/start time
+    // Bump interval: call bumpSeed and reset progress/start time
     const bumpId = setInterval(() => {
       bumpSeed();
       start = Date.now();
@@ -129,13 +142,6 @@ function App() {
     return <div>loading...</div>;
   }
 
-  // useEffect(() => {
-  //     const interval = setInterval(() => {
-  //         bumpSeed()
-  //     }, 30000)
-  //     return () => clearInterval(interval)
-  // }, [])
-
   const partCount = svg ? Array.from(svg.children).length : "-";
 
   return (
@@ -148,6 +154,27 @@ function App() {
         sheetHeight={sheetHeight}
       />
       <menu>
+        <div style={{ marginBottom: 8 }}>
+          <label>
+            Source:
+            <select
+              value={selectedSvgIndex}
+              onChange={(e) => {
+                const idx = +e.currentTarget.value;
+                setSelectedSvgIndex(idx);
+                setSheetWidth(svgOptions[idx].sheetWidth);
+                setSheetHeight(svgOptions[idx].sheetHeight);
+              }}
+              style={{ marginLeft: 8, height: 22 }}
+            >
+              {svgOptions.map((opt, i) => (
+                <option key={opt.label} value={i}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
         <div style={{ marginBottom: 8 }}>
           <label style={{ marginRight: 12 }}>
             Sheet Width (mm):
@@ -188,7 +215,7 @@ function App() {
             onChange={(e) => {
               if (e.currentTarget.checked) {
                 bumpSeed();
-                // reset timers when checkbox triggers an immediate bump
+                // Reset timers when checkbox triggers an immediate bump
                 setTimerResetKey((k) => k + 1);
               }
               setAutoBumpSeed(e.currentTarget.checked);

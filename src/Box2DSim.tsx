@@ -21,7 +21,6 @@ import { DebugDraw } from "@box2d/debug-draw";
 import Stats from "stats.js";
 import Prando from "prando";
 
-const HUBSCALE = 1;
 const SCALE_FACTOR = 4; // Controls scale of units in physics world. Box2D is optimized for a certain scale.
 const WIDTH = 1000;
 const HEIGHT = 1000;
@@ -63,7 +62,6 @@ const Box2DSim = memo(
           throw new Error("Could not create 2d context for debug-draw");
         if (!debugDrawRef.current) {
           debugDrawRef.current = new DebugDraw(m_ctx);
-          // draw.Prepare(500 / SCALE_FACTOR, 500 / SCALE_FACTOR, 1 / SCALE_FACTOR, false);
         }
         debugDrawRef.current.Prepare(
           WIDTH / 2,
@@ -93,6 +91,7 @@ const Box2DSim = memo(
 
         window.cancelAnimationFrame(animationFrameLoop.current);
       };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [seed, sheetWidth, sheetHeight]);
 
     let bodies: b2Body[] = []; // useRef<b2Body[]>([]);
@@ -109,8 +108,7 @@ const Box2DSim = memo(
       bodiesToRandomSort.forEach((body, i) => {
         body.SetTransformXY(
           WIDTH / 2 - 25 + ((i % COLS) / COLS) * 55,
-          ((HEIGHT * 2.4 - ROW_SPACING * (Math.floor(i / COLS) + 1)) *
-            HUBSCALE) /
+          (HEIGHT * 2.4 - ROW_SPACING * (Math.floor(i / COLS) + 1)) /
             SCALE_FACTOR,
           0
         );
@@ -249,22 +247,15 @@ const Box2DSim = memo(
         const hitBoxRects = faceGroup.querySelectorAll("g.hitboxes > rect");
         // console.log(hitBoxRects)
         hitBoxRects.forEach((rect) => {
-          const x =
-            (+(rect.getAttribute("x") as string) / SCALE_FACTOR) * HUBSCALE;
-          const y =
-            (+(rect.getAttribute("y") as string) / SCALE_FACTOR) * HUBSCALE;
-          let width =
-            (+(rect.getAttribute("width") as string) / SCALE_FACTOR) * HUBSCALE;
-          let height =
-            (+(rect.getAttribute("height") as string) / SCALE_FACTOR) *
-            HUBSCALE;
+          const x = +(rect.getAttribute("x") as string) / SCALE_FACTOR;
+          const y = +(rect.getAttribute("y") as string) / SCALE_FACTOR;
+          let width = +(rect.getAttribute("width") as string) / SCALE_FACTOR;
+          let height = +(rect.getAttribute("height") as string) / SCALE_FACTOR;
           const transform = rect.getAttribute("transform");
           let rotation = 0;
           if (transform) {
-            console.log(transform, transform.split("rotate("));
             rotation = +transform.split("rotate(")[1].slice(0, -1); // this is gross but regex is hard
           }
-          // console.log(x, y, width, height, rotation)
           let center = { x: x + width / 2, y: y + height / 2 };
           if (rotation) {
             center = rotateAroundOrigin(
