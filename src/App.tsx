@@ -4,7 +4,20 @@ import Box2DSim from "./Box2DSim";
 import catHubs from "./svg/cat_hubs.svg";
 import catFaces from "./svg/cat_faces.svg";
 
-const svgOptions = [
+// ----- Types & constants -----
+type SvgOption = {
+  label: string;
+  svgSource: string;
+  sheetWidth: number;
+  sheetHeight: number;
+};
+
+type BestSeed = { seed: number; packHeight: number };
+
+const BUMP_INTERVAL_MS = 15_000; // interval between automatic seed bumps
+const PROGRESS_TICK_MS = 100; // UI refresh rate for timer progress
+
+const svgOptions: Readonly<SvgOption[]> = [
   {
     label: "cat_faces",
     svgSource: catFaces,
@@ -14,6 +27,78 @@ const svgOptions = [
   { label: "cat_hubs", svgSource: catHubs, sheetWidth: 250, sheetHeight: 790 },
 ];
 
+// ----- Small presentational components -----
+function TimerProgress({ progress }: { progress: number }) {
+  return (
+    <svg viewBox="0 0 36 36" width={18} height={18} aria-hidden>
+      <path
+        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+        fill="none"
+        stroke="#000000"
+        strokeWidth="4"
+      />
+      <path
+        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+        fill="none"
+        stroke="#3b82f6"
+        strokeWidth="4"
+        strokeLinecap="round"
+        strokeDasharray={100}
+        strokeDashoffset={Math.round((1 - progress) * 100)}
+        transform="rotate(-90 18 18)"
+      />
+    </svg>
+  );
+}
+
+function BestSeedsTable({
+  items,
+  onSelect,
+}: {
+  items: Readonly<BestSeed[]>;
+  onSelect: (s: BestSeed) => void;
+}) {
+  if (items.length === 0) {
+    return <p style={{ margin: 0, fontStyle: "italic" }}>No saved seeds yet</p>;
+  }
+  return (
+    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <thead>
+        <tr>
+          <th style={{ textAlign: "left", padding: 4 }}>Seed</th>
+          <th style={{ textAlign: "left", padding: 4 }}>Pack Height</th>
+        </tr>
+      </thead>
+      <tbody>
+        {items.map((row, idx) => (
+          <tr
+            key={`${row.seed}-${idx}`}
+            onClick={() => onSelect(row)}
+            style={{ cursor: "pointer", borderTop: "1px solid #6f6f6fff" }}
+          >
+            <td style={{ padding: 6 }}>{row.seed}</td>
+            <td style={{ padding: 6 }}>{`${row.packHeight.toFixed(1)}mm`}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+// ----- Helpers -----
+async function fetchSvgElement(src: string): Promise<SVGElement> {
+  const text = await fetch(src).then((r) => r.text());
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(text, "application/xml");
+  const errorNode = doc.querySelector("parsererror");
+  if (errorNode) {
+    throw new Error("Error while parsing SVG");
+  }
+  const svgEl = doc.getElementsByTagName("svg")[0];
+  if (!svgEl) throw new Error("SVG element not found");
+  return svgEl;
+}
+
 function App() {
   const [svg, setSvg] = useState<SVGElement | null>(null);
   const [seed, setSeed] = useState(1);
@@ -22,31 +107,27 @@ function App() {
   const [selectedSvgIndex, setSelectedSvgIndex] = useState(0);
   const seedRef = useRef(seed);
   const [autoBumpSeed, setAutoBumpSeed] = useState(true);
-  const [bestSeeds, setBestSeeds] = useState<
-    Array<{ seed: number; packHeight: number }>
-  >([]);
+  const [bestSeeds, setBestSeeds] = useState<BestSeed[]>([]);
   const [packHeight, setPackHeight] = useState(0);
   const [timerProgress, setTimerProgress] = useState(0);
   const [timerResetKey, setTimerResetKey] = useState(0);
   const packHeightRef = useRef(packHeight);
 
   useEffect(() => {
-    // Load the currently selected svg option
+    // Load the currently selected SVG option.
+    let disposed = false;
     const src = svgOptions[selectedSvgIndex].svgSource;
     setSvg(null);
-    fetch(src)
-      .then((response) => response.text())
-      .then((fileContent) => {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(fileContent, "application/xml");
-        const svgEl = doc.getElementsByTagName("svg")[0];
-        setSvg(svgEl);
-
-        const errorNode = doc.querySelector("parsererror");
-        if (errorNode) {
-          console.log("error while parsing");
-        }
+    fetchSvgElement(src)
+      .then((el) => {
+        if (!disposed) setSvg(el);
+      })
+      .catch(() => {
+        if (!disposed) setSvg(null);
       });
+    return () => {
+      disposed = true;
+    };
   }, [selectedSvgIndex]);
 
   const onChangeSeedInput: React.ChangeEventHandler<HTMLInputElement> = (e) => {
@@ -63,14 +144,13 @@ function App() {
   }, [packHeight]);
 
   const bumpSeed = () => {
-    // Before bumping, record the current seed/packHeight into bestSeeds.
+    // Before bumping, conditionally record the current seed/packHeight into bestSeeds.
     setBestSeeds((prev) => {
       const entry = {
         seed: seedRef.current,
         packHeight: packHeightRef.current,
       };
-      console.log(entry);
-      // If we have fewer than 5 entries, just add it.
+      // If we have fewer than 10 entries, just add it.
       if (prev.length < 10) {
         return [...prev, entry].sort((a, b) => a.packHeight - b.packHeight);
       }
@@ -84,7 +164,6 @@ function App() {
           maxIdx = i;
         }
       }
-      console.log("maxIdx, maxVal: " + maxIdx + ", " + maxVal);
       // Replace the worst if current is better (smaller packHeight),
       // excluding duplicates (same seed and packHeight).
       if (
@@ -104,9 +183,8 @@ function App() {
     setTimerResetKey((k) => k + 1);
   };
 
-  // Manage bump interval and a progress timer for the pie UI.
+  // Manage bump interval and a progress timer UI.
   useEffect(() => {
-    const INTERVAL_MS = 15000; // interval duration in ms (matches bump interval)
     if (!autoBumpSeed) {
       setTimerProgress(0);
       return;
@@ -115,20 +193,17 @@ function App() {
     let start = Date.now();
     setTimerProgress(1);
 
-    // Progress tick updates UI more frequently
-    const tickMs = 100;
     const progressId = setInterval(() => {
       const elapsed = Date.now() - start;
-      const frac = Math.max(0, 1 - elapsed / INTERVAL_MS);
+      const frac = Math.max(0, 1 - elapsed / BUMP_INTERVAL_MS);
       setTimerProgress(frac);
-    }, tickMs);
+    }, PROGRESS_TICK_MS);
 
-    // Bump interval: call bumpSeed and reset progress/start time
     const bumpId = setInterval(() => {
       bumpSeed();
       start = Date.now();
       setTimerProgress(1);
-    }, INTERVAL_MS);
+    }, BUMP_INTERVAL_MS);
 
     return () => {
       clearInterval(progressId);
@@ -223,64 +298,18 @@ function App() {
             style={{ margin: 0 }}
           />
           Auto Bump Seed
-          <svg viewBox="0 0 36 36" width={18} height={18} aria-hidden>
-            <path
-              d="M18 2.0845
-                 a 15.9155 15.9155 0 0 1 0 31.831
-                 a 15.9155 15.9155 0 0 1 0 -31.831"
-              fill="none"
-              stroke="#000000"
-              strokeWidth="4"
-            />
-            <path
-              d="M18 2.0845
-                 a 15.9155 15.9155 0 0 1 0 31.831
-                 a 15.9155 15.9155 0 0 1 0 -31.831"
-              fill="none"
-              stroke="#3b82f6"
-              strokeWidth="4"
-              strokeLinecap="round"
-              strokeDasharray={100}
-              strokeDashoffset={Math.round((1 - timerProgress) * 100)}
-              transform="rotate(-90 18 18)"
-            />
-          </svg>
+          <TimerProgress progress={timerProgress} />
         </label>
         <p>{`Pack Height: ${packHeight.toFixed(1)}mm`}</p>
         <div style={{ marginTop: 12 }}>
           <h4 style={{ margin: "6px 0" }}>Best Seeds</h4>
-          {bestSeeds.length === 0 ? (
-            <p style={{ margin: 0, fontStyle: "italic" }}>No saved seeds yet</p>
-          ) : (
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr>
-                  <th style={{ textAlign: "left", padding: 4 }}>Seed</th>
-                  <th style={{ textAlign: "left", padding: 4 }}>Pack Height</th>
-                </tr>
-              </thead>
-              <tbody>
-                {bestSeeds.map((bs, idx) => (
-                  <tr
-                    key={`${bs.seed}-${idx}`}
-                    onClick={() => {
-                      setSeed(bs.seed);
-                      setAutoBumpSeed(false);
-                    }}
-                    style={{
-                      cursor: "pointer",
-                      borderTop: "1px solid #6f6f6fff",
-                    }}
-                  >
-                    <td style={{ padding: 6 }}>{bs.seed}</td>
-                    <td style={{ padding: 6 }}>{`${bs.packHeight.toFixed(
-                      1
-                    )}mm`}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+          <BestSeedsTable
+            items={bestSeeds}
+            onSelect={(row) => {
+              setSeed(row.seed);
+              setAutoBumpSeed(false);
+            }}
+          />
         </div>
       </menu>
     </div>
