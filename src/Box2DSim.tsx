@@ -6,7 +6,6 @@ import {
   b2BodyType,
   b2EdgeShape,
   b2Fixture,
-  b2FixtureDef,
   b2LinearStiffness,
   b2MouseJoint,
   b2MouseJointDef,
@@ -15,8 +14,8 @@ import {
   b2World,
   DrawJoints,
   DrawShapes,
-  XY,
 } from "@box2d/core";
+import type { b2FixtureDef, XY } from "@box2d/core";
 import { DebugDraw } from "@box2d/debug-draw";
 import Stats from "stats.js";
 import Prando from "prando";
@@ -26,8 +25,8 @@ const WIDTH = 1000;
 const HEIGHT = 1000;
 
 interface IPartTransform {
-  x: Number;
-  y: Number;
+  x: number;
+  y: number;
   rotation: number;
 }
 
@@ -50,7 +49,7 @@ const Box2DSim = memo(
     const debugDrawRef = useRef<DebugDraw | null>(null);
     const statsRef = useRef<Stats | null>(null);
     const faceTransforms = useRef<IPartTransform[]>([]);
-    let animationFrameLoop = useRef(0);
+    const animationFrameLoop = useRef(0);
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
     useEffect(() => {
       const debugCanvas = debugCanvasRef.current;
@@ -249,8 +248,8 @@ const Box2DSim = memo(
         hitBoxRects.forEach((rect) => {
           const x = +(rect.getAttribute("x") as string) / SCALE_FACTOR;
           const y = +(rect.getAttribute("y") as string) / SCALE_FACTOR;
-          let width = +(rect.getAttribute("width") as string) / SCALE_FACTOR;
-          let height = +(rect.getAttribute("height") as string) / SCALE_FACTOR;
+          const width = +(rect.getAttribute("width") as string) / SCALE_FACTOR;
+          const height = +(rect.getAttribute("height") as string) / SCALE_FACTOR;
           const transform = rect.getAttribute("transform");
           let rotation = 0;
           if (transform) {
@@ -304,16 +303,12 @@ const Box2DSim = memo(
       }
 
       let minY = 1000;
-      bodies.forEach((body, i) => {
+      bodies.forEach((body) => {
         const fix = body.GetFixtureList();
         const lowerY = fix?.GetAABB(0).lowerBound.y || 0;
         if (lowerY < minY) {
           minY = lowerY;
         }
-        //   const upperY = 1000 - (fix?.GetAABB(0).lowerBound.y || 0);
-        //   if (upperY && maxY < upperY) {
-        //     maxY = upperY;
-        //   }
       });
 
       reportPackHeight(1000 - minY);
@@ -398,7 +393,7 @@ const Box2DSim = memo(
         HEIGHT / 2 + yDiff / SCALE_FACTOR
       );
     };
-    const handleMouseUp = (e: MouseEvent): void => {
+    const handleMouseUp = (): void => {
       if (m_mouseJoint) {
         m_world.DestroyJoint(m_mouseJoint);
         m_mouseJoint = null;
@@ -535,7 +530,7 @@ const saveSVG = async (blob: Blob) => {
   const a = document.createElement("a");
   a.download = "output.svg"; // TODO: Match input SVG name
   a.href = URL.createObjectURL(blob);
-  a.addEventListener("click", (e) => {
+  a.addEventListener("click", () => {
     setTimeout(() => URL.revokeObjectURL(a.href), 30 * 1000);
   });
   a.click();

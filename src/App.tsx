@@ -59,7 +59,7 @@ function BestSeedsTable({
   onSelect: (s: BestSeed) => void;
 }) {
   if (items.length === 0) {
-    return <p style={{ margin: 0, fontStyle: "italic" }}>No saved seeds yet</p>;
+    return <p style={{ margin: 0, fontStyle: "italic" }}>No saved seeds yet.</p>;
   }
   return (
     <table style={{ width: "100%", borderCollapse: "collapse" }}>

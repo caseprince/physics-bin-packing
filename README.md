@@ -9,12 +9,12 @@ The [bin packing problem](https://en.wikipedia.org/wiki/Packing_problems) is a c
 
 ## Setup
 
-Install Node.js version 22.10.0 (or a compatible LTS release). In the project directory, run:
+Install Node.js version 22+ (or a compatible LTS release). In the project directory, run:
 
-### `npm install` && `npm start`
+### `npm install` && `npm run dev`
 
-This starts the app in development mode.
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+This starts the app in development mode using Vite.
+Open the URL printed in the terminal (typically [http://localhost:5173](http://localhost:5173)).
 
 The page will reload automatically when you make edits.
 
