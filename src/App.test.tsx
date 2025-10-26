@@ -44,9 +44,11 @@ describe('App', () => {
     })) as unknown as typeof fetch);
   });
 
-  it('renders loading state initially', () => {
+  it('renders loading state initially', async () => {
     render(<App />);
     expect(screen.getByText(/loading\.\.\./i)).toBeInTheDocument();
+    // Wait for the next state change so async updates are wrapped by act
+    await screen.findByTestId('box2d-mock');
   });
 
   it('loads the SVG and renders Box2DSim with initial props', async () => {

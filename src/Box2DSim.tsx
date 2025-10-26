@@ -93,7 +93,7 @@ const Box2DSim = memo(
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [seed, sheetWidth, sheetHeight]);
 
-    let bodies: b2Body[] = []; // useRef<b2Body[]>([]);
+    let bodies: b2Body[] = [];
 
     const positionBodies = () => {
       const rng = new Prando(seed);
@@ -193,19 +193,19 @@ const Box2DSim = memo(
         hitBoxPaths.forEach((path, i) => {
           const dParts = path.getAttribute("d")?.split(" ") || [];
           /* EG: [
-                    "M",
-                    "30.3539465789905",
-                    "-14.8089705308746",
-                    "L",
-                    "0.045809654247714", // Loop from index 4!
-                    "-24.6159674447546",
-                    "L",
-                    "0.045809633959952",
-                    "-1.93172136715616",
-                    "L",
-                    "30.3539465789905",
-                    "-14.8089705308746"
-                ]*/
+              "M",
+              "30.3539465789905",
+              "-14.8089705308746",
+              "L",
+              "0.045809654247714", // Loop from index 4!
+              "-24.6159674447546",
+              "L",
+              "0.045809633959952",
+              "-1.93172136715616",
+              "L",
+              "30.3539465789905",
+              "-14.8089705308746"
+          ]*/
 
           const polygonPoints: Array<{ x: number; y: number }> = [];
           for (let d = 4; d < dParts.length; d += 3) {
@@ -226,7 +226,6 @@ const Box2DSim = memo(
           }
 
           const shape = new b2PolygonShape();
-          // shape.SetAsBox(10 / SCALE_FACTOR, 10 / SCALE_FACTOR);
           shape.Set(
             polygonPoints.map((point) => ({
               x: point.x / SCALE_FACTOR,
@@ -244,7 +243,6 @@ const Box2DSim = memo(
 
         // HITBOX RECTS
         const hitBoxRects = faceGroup.querySelectorAll("g.hitboxes > rect");
-        // console.log(hitBoxRects)
         hitBoxRects.forEach((rect) => {
           const x = +(rect.getAttribute("x") as string) / SCALE_FACTOR;
           const y = +(rect.getAttribute("y") as string) / SCALE_FACTOR;
@@ -338,7 +336,6 @@ const Box2DSim = memo(
     const handleMouseDown = (e: MouseEvent): void => {
       // left mouse button
       if (e.button === 0) {
-        //const p = new b2Vec2(e.offsetX, e.offsetY);
         const p = unProjectMouseEvent(e);
 
         if (m_mouseJoint !== null) {
