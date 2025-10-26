@@ -59,7 +59,9 @@ function BestSeedsTable({
   onSelect: (s: BestSeed) => void;
 }) {
   if (items.length === 0) {
-    return <p style={{ margin: 0, fontStyle: "italic" }}>No saved seeds yet.</p>;
+    return (
+      <p style={{ margin: 0, fontStyle: "italic" }}>No saved seeds yet.</p>
+    );
   }
   return (
     <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -102,10 +104,14 @@ async function fetchSvgElement(src: string): Promise<SVGElement> {
 function App() {
   const [selectedSvgIndex, setSelectedSvgIndex] = useState(0);
   const [svg, setSvg] = useState<SVGElement | null>(null);
-  const [sheetWidth, setSheetWidth] = useState<number>(svgOptions[selectedSvgIndex].sheetWidth);
-  const [sheetHeight, setSheetHeight] = useState<number>(svgOptions[selectedSvgIndex].sheetHeight);
+  const [sheetWidth, setSheetWidth] = useState<number>(
+    svgOptions[selectedSvgIndex].sheetWidth
+  );
+  const [sheetHeight, setSheetHeight] = useState<number>(
+    svgOptions[selectedSvgIndex].sheetHeight
+  );
 
-  const [seed, setSeed] = useState(1);  
+  const [seed, setSeed] = useState(1);
   const [autoBumpSeed, setAutoBumpSeed] = useState(true);
   const [bestSeeds, setBestSeeds] = useState<BestSeed[]>([]);
   const [packHeight, setPackHeight] = useState(0);

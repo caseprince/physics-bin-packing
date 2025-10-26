@@ -50,7 +50,7 @@ const Box2DSim = memo(
     const statsRef = useRef<Stats | null>(null);
     const faceTransforms = useRef<IPartTransform[]>([]);
     const animationFrameLoop = useRef(0);
-    
+
     useEffect(() => {
       const debugCanvas = debugCanvasRef.current;
       if (debugCanvas) {
@@ -90,7 +90,7 @@ const Box2DSim = memo(
 
         window.cancelAnimationFrame(animationFrameLoop.current);
       };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [seed, sheetWidth, sheetHeight]);
 
     let bodies: b2Body[] = [];
@@ -247,7 +247,8 @@ const Box2DSim = memo(
           const x = +(rect.getAttribute("x") as string) / SCALE_FACTOR;
           const y = +(rect.getAttribute("y") as string) / SCALE_FACTOR;
           const width = +(rect.getAttribute("width") as string) / SCALE_FACTOR;
-          const height = +(rect.getAttribute("height") as string) / SCALE_FACTOR;
+          const height =
+            +(rect.getAttribute("height") as string) / SCALE_FACTOR;
           const transform = rect.getAttribute("transform");
           let rotation = 0;
           if (transform) {
@@ -424,7 +425,9 @@ const Box2DSim = memo(
           {paused ? "Resume Simulation" : "Pause Simulation"}
         </button>
         <br /> */}
-          <p><em>Click and drag parts for fun! ↝</em></p>
+          <p>
+            <em>Click and drag parts for fun! ↝</em>
+          </p>
           <button
             onClick={() => {
               const svgString = renderToString(
