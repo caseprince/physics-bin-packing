@@ -9,7 +9,7 @@ The [bin packing problem](https://en.wikipedia.org/wiki/Packing_problems) is a c
 
 ## Setup
 
-Install Node.js version 22+ (or a compatible LTS release). In the project directory, run:
+Install Node.js version 22.20.0 (or a compatible LTS release). In the project directory, run:
 
 ### `npm install` && `npm run dev`
 
