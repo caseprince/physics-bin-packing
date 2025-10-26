@@ -100,12 +100,12 @@ async function fetchSvgElement(src: string): Promise<SVGElement> {
 }
 
 function App() {
-  const [svg, setSvg] = useState<SVGElement | null>(null);
-  const [seed, setSeed] = useState(1);
-  const [sheetWidth, setSheetWidth] = useState<number>(384);
-  const [sheetHeight, setSheetHeight] = useState<number>(790);
   const [selectedSvgIndex, setSelectedSvgIndex] = useState(0);
-  const seedRef = useRef(seed);
+  const [svg, setSvg] = useState<SVGElement | null>(null);
+  const [sheetWidth, setSheetWidth] = useState<number>(svgOptions[selectedSvgIndex].sheetWidth);
+  const [sheetHeight, setSheetHeight] = useState<number>(svgOptions[selectedSvgIndex].sheetHeight);
+
+  const [seed, setSeed] = useState(1);  
   const [autoBumpSeed, setAutoBumpSeed] = useState(true);
   const [bestSeeds, setBestSeeds] = useState<BestSeed[]>([]);
   const [packHeight, setPackHeight] = useState(0);
@@ -137,9 +137,6 @@ function App() {
   };
 
   useEffect(() => {
-    seedRef.current = seed;
-  }, [seed]);
-  useEffect(() => {
     packHeightRef.current = packHeight;
   }, [packHeight]);
 
@@ -147,7 +144,7 @@ function App() {
     // Before bumping, conditionally record the current seed/packHeight into bestSeeds.
     setBestSeeds((prev) => {
       const entry = {
-        seed: seedRef.current,
+        seed,
         packHeight: packHeightRef.current,
       };
       // If we have fewer than 10 entries, just add it.
