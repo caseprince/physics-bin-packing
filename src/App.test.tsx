@@ -2,6 +2,7 @@
 /// <reference types="vitest/globals" />
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import App from './App';
+import React from 'react';
 
 // Mock fetch for SVG loading
 const SAMPLE_SVG = `
