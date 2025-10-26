@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any */
 /// <reference types="vitest/globals" />
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import App from './App';

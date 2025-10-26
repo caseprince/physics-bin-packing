@@ -50,7 +50,7 @@ const Box2DSim = memo(
     const statsRef = useRef<Stats | null>(null);
     const faceTransforms = useRef<IPartTransform[]>([]);
     const animationFrameLoop = useRef(0);
-    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+    
     useEffect(() => {
       const debugCanvas = debugCanvasRef.current;
       if (debugCanvas) {

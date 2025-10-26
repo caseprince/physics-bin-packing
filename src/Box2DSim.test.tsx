@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, prefer-const */
 /// <reference types="vitest/globals" />
 import { render, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import React from 'react';
