@@ -1,4 +1,4 @@
-name: NodeJS with Create React App
+name: Build with Vite and Deploy to GitHub Pages
 
 on:
   # Runs on pushes targeting the default branch

@@ -2,7 +2,6 @@
   "name": "physics-bin-packing",
   "version": "1.0.0",
   "description": "A 2D bin packing tool using a physics engine (Box2D)",
-  "homepage": ".",
   "license": "MIT",
   "author": "Case Prince",
   "private": true,
