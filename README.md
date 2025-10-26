@@ -1,33 +1,32 @@
 # Physics Bin Packing
 
-This tool helps optimize polygonal part packing on a single 2D sheet using a physics simulation.
+This tool packs polygonal parts on a single 2D sheet using a physics‑based approach.
 
-The [bin packing problem](https://en.wikipedia.org/wiki/Packing_problems) is a class of optimization problems that is computationally difficult ([NP-complete](https://en.wikipedia.org/wiki/NP-completeness)). Commercial and open-source applications, including CAD-package plugins, mostly use heuristic approximation algorithms. Using a physics engine is an interesting alternative to explore. This project uses a TypeScript port of the Box2D engine: [box2d.ts](https://github.com/lusito/box2d.ts).
+The [bin‑packing problem](https://en.wikipedia.org/wiki/Packing_problems) is NP‑complete. Most commercial and open‑source tools (including CAD plugins) rely on heuristics. Here, we explore a different angle: driving the layout with a physics engine. The simulation runs on Box2D for the web: [@box2d/core](https://www.npmjs.com/package/@box2d/core).
 
-[<img src="images/screenshot.png" alt="Screenhot of physics simulation" width="500">](https://caseprince.github.io/physics-bin-packing/)\
+<!-- markdownlint-disable-next-line MD033 -->
+[<img src="images/screenshot.png" alt="Screenshot of physics simulation" width="500">](https://caseprince.github.io/physics-bin-packing/)\
 *View project live at [https://caseprince.github.io/physics-bin-packing/](https://caseprince.github.io/physics-bin-packing/).*
 
 ## Setup
 
-Install Node.js version 22.20.0 (or a compatible LTS release). In the project directory, run:
+Requirements: Node.js 22.20.0 (or a current LTS). In the project directory, run:
 
 ### `npm install` && `npm run dev`
 
-This starts the app in development mode using Vite.
-Open the URL printed in the terminal (typically [http://localhost:5173](http://localhost:5173)).
-
-The page will reload automatically when you make edits.
+This starts the Vite dev server.
+Open the URL printed in the terminal.
 
 ## Usage
 
-- Initial part placement is random but deterministic based on a seed. By default, the app can automatically cycle through seeds and record those with the best packing density. There's not a huge amount of variation in overall density between seeds, but it's fun to watch!
-- Input is an SVG file (currently hardcoded).
-- Parts are defined as top-level `<g>` group nodes.
-- Part geometry does not need to be purely polygonal. It can include curves, interior details, text, and so on.
-- A simplified shape must be provided for the physics simulation. This is defined by an SVG group with class `hitboxes` that contains polygonal `<path>` or `<rect>` elements.
-- Hitbox polygons should have seven or fewer control points.
-- More complex or concave shapes can be achieved by combining multiple convex nodes within the `hitboxes` group.
-- `hitboxes` groups will be excluded from the output. All other nodes and properties are retained. Parts will be positioned on the sheet with an added `transform` property, so input nodes should not already include this property.
+- Initial placement is random but seed‑driven (deterministic). The app can auto‑cycle seeds and record those with the best (lowest) pack height. Variation between seeds is modest—but it's fun to watch.
+- Input is an SVG (currently hardcoded).
+- Parts are defined as top‑level `<g>` nodes.
+- Part geometry doesn't need to be purely polygonal; curves, interior details, and text are fine.
+- Provide a simplified collision shape for the simulation: an SVG group with class `hitboxes` containing polygonal `<path>` or `<rect>` elements.
+- Hitbox polygons work best with seven points or fewer.
+- Model concave or intricate shapes by combining multiple convex nodes within `hitboxes`.
+- `hitboxes` groups are excluded from the output; all other nodes and attributes are preserved. Parts are positioned on the sheet via a `transform` attribute, so input nodes should not already set `transform`.
 
 ### Example SVG Part Geometry
 
@@ -58,6 +57,6 @@ Output:
 
 ## Origin
 
-This tool was developed as part of the workflow for a series of laser-cut sculptures, but could be used for any 2D CNC process.
+Originally built for a series of laser‑cut sculptures, but it's suitable for any 2D CNC workflow.
 
-![Wireframe alongside laser cut acrylic cat sculpture](images/laser-cat.jpg?raw=true "Wireframe alongside laser cut acrylic cat sculpture")
+![Wireframe alongside laser-cut acrylic cat sculpture](images/laser-cat.jpg?raw=true "Wireframe alongside laser-cut acrylic cat sculpture")
